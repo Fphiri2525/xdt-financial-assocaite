@@ -251,21 +251,21 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
   const statsCards = [
     {
       title: 'Money Borrowed',
-      value: `K${loanData.borrowed.toLocaleString()}`,
+      value: loanData.loan_id === 0 ? 'K0' : `K${loanData.borrowed.toLocaleString()}`,
       icon: DollarSign,
       iconBg: darkMode ? 'bg-blue-500/20' : 'bg-blue-50',
       iconColor: 'text-blue-500',
     },
     {
       title: 'Loan Duration',
-      value: `${loanData.weeks_to_pay} weeks`,
+      value: loanData.loan_id === 0 ? '0 weeks' : `${loanData.weeks_to_pay} weeks`,
       icon: Calendar,
       iconBg: darkMode ? 'bg-purple-500/20' : 'bg-purple-50',
       iconColor: 'text-purple-500',
     },
     {
       title: 'Weekly Payment',
-      value: `K${loanData.weekly_payment.toFixed(0)}`,
+      value: loanData.loan_id === 0 ? 'K0' : `K${loanData.weekly_payment.toFixed(0)}`,
       icon: TrendingUp,
       iconBg: darkMode ? 'bg-green-500/20' : 'bg-green-50',
       iconColor: 'text-green-500',
@@ -329,19 +329,7 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
       </div>
 
       <div className="p-6 space-y-6">
-        {/* No loan banner */}
-        {loanData.loan_id === 0 && (
-          <div className={`flex items-center gap-3 p-4 rounded-xl border-l-4 ${
-            darkMode
-              ? 'bg-blue-500/10 border-blue-400 text-blue-300'
-              : 'bg-blue-50 border-blue-400 text-blue-700'
-          }`}>
-            <AlertCircle size={16} className="shrink-0" />
-            <p className="text-sm">You have no active loan. Statistics will show once a loan is applied.</p>
-          </div>
-        )}
-
-        {/* Stats row */}
+        {/* Stats row - Always show with zeros if no loan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {statsCards.map(({ title, value, icon: Icon, iconBg, iconColor }) => (
             <div
@@ -361,7 +349,7 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
           ))}
         </div>
 
-        {/* Interest Calculation Card */}
+        {/* Interest Calculation Card - Only show if loan exists */}
         {loanData.loan_id > 0 && (
           <div className={`rounded-xl border shadow-sm p-6 ${themeClasses.card}`}>
             <h2 className={`text-lg font-semibold mb-4 ${themeClasses.text}`}>Loan Calculation Details</h2>
@@ -510,9 +498,9 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
 
             <div className="space-y-4">
               {[
-                { label: 'Principal Borrowed', value: `K${loanData.borrowed.toLocaleString()}`, size: 'text-xl', color: themeClasses.text },
-                { label: 'Total Interest', value: `K${loanData.total_interest?.toFixed(2) || '0'}`, size: 'text-xl', color: 'text-purple-500' },
-                { label: 'Gross Income', value: `K${loanData.total_to_pay.toFixed(2)}`, size: 'text-2xl', color: 'text-green-500' },
+                { label: 'Principal Borrowed', value: loanData.loan_id === 0 ? 'K0' : `K${loanData.borrowed.toLocaleString()}`, size: 'text-xl', color: themeClasses.text },
+                { label: 'Total Interest', value: loanData.loan_id === 0 ? 'K0' : `K${loanData.total_interest?.toFixed(2) || '0'}`, size: 'text-xl', color: 'text-purple-500' },
+                { label: 'Gross Income', value: loanData.loan_id === 0 ? 'K0' : `K${loanData.total_to_pay.toFixed(2)}`, size: 'text-2xl', color: 'text-green-500' },
                 { label: 'Total Paid', value: `K${paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, size: 'text-xl', color: 'text-blue-500' },
                 { label: 'Remaining Balance', value: `K${Math.max(0, remainingAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, size: 'text-xl', color: 'text-orange-500' },
               ].map(({ label, value, size, color }) => (
@@ -541,9 +529,9 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
               <div className={`p-4 rounded-xl ${themeClasses.inset}`}>
                 <div className={`space-y-2.5`}>
                   {[
-                    { label: 'Weekly Payment', value: `K${loanData.weekly_payment.toFixed(0)}`, color: 'text-green-500' },
-                    { label: 'Daily Interest Rate', value: `${loanData.interest_rate}%`, color: 'text-blue-500' },
-                    { label: 'Daily Interest', value: `K${loanData.daily_interest?.toFixed(2) || '0'}`, color: 'text-purple-500' },
+                    { label: 'Weekly Payment', value: loanData.loan_id === 0 ? 'K0' : `K${loanData.weekly_payment.toFixed(0)}`, color: 'text-green-500' },
+                    { label: 'Daily Interest Rate', value: loanData.loan_id === 0 ? '0%' : `${loanData.interest_rate}%`, color: 'text-blue-500' },
+                    { label: 'Daily Interest', value: loanData.loan_id === 0 ? 'K0' : `K${loanData.daily_interest?.toFixed(2) || '0'}`, color: 'text-purple-500' },
                     { label: 'Remaining Weeks', value: `${remainingWeeks} weeks`, color: 'text-orange-500' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="flex items-center justify-between text-sm">
@@ -554,21 +542,21 @@ export const ApplicantDashboard: React.FC<ApplicantDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Payment Progress Message */}
-              {paidAmount > 0 && paidAmount < loanData.total_to_pay && (
+              {/* Payment Progress Message - Only show if loan exists */}
+              {loanData.loan_id > 0 && paidAmount > 0 && paidAmount < loanData.total_to_pay && (
                 <div className={`p-3 rounded-lg text-center text-sm ${darkMode ? 'bg-yellow-500/10 text-yellow-300' : 'bg-yellow-50 text-yellow-700'}`}>
                   💪 Keep going! You've paid K{paidAmount.toLocaleString()} so far.
                   {remainingWeeks > 0 && ` Only ${remainingWeeks} weeks left!`}
                 </div>
               )}
 
-              {paidAmount >= loanData.total_to_pay && loanData.total_to_pay > 0 && (
+              {loanData.loan_id > 0 && paidAmount >= loanData.total_to_pay && loanData.total_to_pay > 0 && (
                 <div className={`p-3 rounded-lg text-center text-sm ${darkMode ? 'bg-green-500/10 text-green-300' : 'bg-green-50 text-green-700'}`}>
                   🎉 Congratulations! Your loan is fully paid!
                 </div>
               )}
 
-              {paidAmount === 0 && loanData.loan_id > 0 && (
+              {loanData.loan_id > 0 && paidAmount === 0 && (
                 <div className={`p-3 rounded-lg text-center text-sm ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${themeClasses.muted}`}>
                   No payments recorded yet. Make your first payment today!
                 </div>

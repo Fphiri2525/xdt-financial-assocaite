@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, LogOut, Moon, Sun, Bell, Menu } from 'lucide-react';
+import { User, LogOut, Moon, Sun, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export interface UserData {
@@ -30,22 +30,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const handleNavigation = (path: string) => {
     router.push(path);
     setShowDropdown(false);
-    setShowNotifications(false);
   };
 
   const toggleDropdown = () => {
     setShowDropdown((v) => !v);
-    setShowNotifications(false);
-  };
-
-  const toggleNotifications = () => {
-    setShowNotifications((v) => !v);
-    setShowDropdown(false);
   };
 
   const handleLogout = () => {
@@ -62,25 +54,13 @@ export const TopBar: React.FC<TopBarProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (
-        !target.closest('.dropdown-container') &&
-        !target.closest('.notifications-container')
-      ) {
+      if (!target.closest('.dropdown-container')) {
         setShowDropdown(false);
-        setShowNotifications(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const notifications = [
-    { id: 1, message: 'Loan application approved',    time: '2 hours ago', read: false },
-    { id: 2, message: 'Payment due in 3 days',        time: '1 day ago',   read: false },
-    { id: 3, message: 'Profile updated successfully', time: '2 days ago',  read: true  },
-  ];
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <nav
@@ -123,70 +103,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           </div>
 
-          {/* Right: notifications, theme, user */}
+          {/* Right: theme + user */}
           <div className="flex items-center space-x-2 md:space-x-3">
-
-            {/* Notifications */}
-            <div className="relative notifications-container">
-              <button
-                onClick={toggleNotifications}
-                className={`
-                  p-2 rounded-lg transition-all duration-200 relative
-                  ${darkMode
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
-                `}
-                aria-label="Notifications"
-              >
-                <Bell size={20} className="md:w-5 md:h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-white dark:border-gray-900">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className={`
-                  absolute right-0 mt-2 w-80 md:w-96 rounded-xl shadow-xl py-2 z-50
-                  ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}
-                `}>
-                  <div className={`px-4 py-3 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <h3 className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      Notifications
-                    </h3>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className={`
-                          px-4 py-3 cursor-pointer transition-colors
-                          ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}
-                          ${!n.read ? (darkMode ? 'bg-gray-700' : 'bg-blue-50') : ''}
-                        `}
-                        onClick={() => handleNavigation('/xdt/notifications')}
-                      >
-                        <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {n.message}
-                        </p>
-                        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {n.time}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className={`px-4 py-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <button
-                      onClick={() => handleNavigation('/xdt/notifications')}
-                      className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 w-full text-center font-medium"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Theme toggle */}
             <button

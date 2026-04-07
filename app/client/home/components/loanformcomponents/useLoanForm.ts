@@ -65,66 +65,141 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
     setCurrentStep(step);
   };
 
-  // Handle borrower submission
+  // Handle borrower submission with detailed notifications
   const handleBorrowerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotification({ type: null, message: '' });
     setIsSubmitting(true);
 
+    // Validate required fields
+    if (!formData.dateOfBirth || !formData.nationalId || !formData.borrowerPhone) {
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Please fill in all required fields: Date of Birth, National ID, and Phone Number' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const result = await submitBorrowerData(userEmail, formData);
-      if (result.profileId) setProfileId(result.profileId);
       
-      setNotification({ type: 'success', message: '✓ Progress saved!' });
+      if (result.profileId) {
+        setProfileId(result.profileId);
+        setNotification({ 
+          type: 'success', 
+          message: '✅ Personal details saved successfully! Your information has been recorded.' 
+        });
+      } else {
+        setNotification({ 
+          type: 'success', 
+          message: '✅ Personal details saved successfully!' 
+        });
+      }
+      
+      // Move to next step after success
       setTimeout(() => {
         setCurrentStep('kin');
         setNotification({ type: null, message: '' });
-      }, 1500);
+      }, 2000);
+      
     } catch (error: any) {
-      setNotification({ type: 'error', message: error.message });
-      setTimeout(() => setCurrentStep('kin'), 2000);
+      console.error('Borrower submission error:', error);
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Error while saving personal details. Please check your information and try again.' 
+      });
+      
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setNotification({ type: null, message: '' });
+      }, 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle kin submission
+  // Handle kin submission with detailed notifications
   const handleKinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotification({ type: null, message: '' });
     setIsSubmitting(true);
 
+    // Validate required fields
+    if (!formData.kinFullName || !formData.kinPhone || !formData.kinRelationship) {
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Please fill in all next of kin details: Full Name, Phone Number, and Relationship' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await submitKinData(userEmail, formData);
-      setNotification({ type: 'success', message: '✓ Progress saved!' });
+      setNotification({ 
+        type: 'success', 
+        message: '✅ Next of kin and employment details saved successfully!' 
+      });
+      
       setTimeout(() => {
         setCurrentStep('collateral');
         setNotification({ type: null, message: '' });
-      }, 1500);
+      }, 2000);
+      
     } catch (error: any) {
-      setNotification({ type: 'error', message: error.message });
-      setTimeout(() => setCurrentStep('collateral'), 2000);
+      console.error('Kin submission error:', error);
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Error while saving next of kin details. Please try again.' 
+      });
+      
+      setTimeout(() => {
+        setNotification({ type: null, message: '' });
+      }, 5000);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Handle collateral submission
+  // Handle collateral submission with detailed notifications
   const handleCollateralSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotification({ type: null, message: '' });
     setIsSubmitting(true);
 
+    // Validate required fields
+    if (!formData.collateralType) {
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Please select a collateral type before proceeding.' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await submitCollateralData(userEmail, formData);
-      setNotification({ type: 'success', message: '✓ Progress saved!' });
+      setNotification({ 
+        type: 'success', 
+        message: '✅ Collateral details saved successfully! You can now review your application.' 
+      });
+      
       setTimeout(() => {
         setCurrentStep('review');
         setNotification({ type: null, message: '' });
-      }, 1500);
+      }, 2000);
+      
     } catch (error: any) {
-      setNotification({ type: 'error', message: error.message });
-      setTimeout(() => setCurrentStep('review'), 2000);
+      console.error('Collateral submission error:', error);
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Error while saving collateral details. Please check your information and try again.' 
+      });
+      
+      setTimeout(() => {
+        setNotification({ type: null, message: '' });
+      }, 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -136,7 +211,16 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
     setNotification({ type: null, message: '' });
     setIsSubmitting(true);
 
-    // Log which user is applying
+    // Validate loan amount
+    if (formData.loanAmount < 1000) {
+      setNotification({ 
+        type: 'error', 
+        message: '❌ Loan amount must be at least MWK 1,000' 
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     console.log('📝 Submitting loan application for logged-in user:', {
       email: userEmail,
       name: userName || 'Not provided',
@@ -152,14 +236,14 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       if (result.loanId) setLoanId(result.loanId);
       
       // Show success message with email status
-      let successMessage = result.message;
+      let successMessage = '✅ ' + result.message;
       
       if (result.userEmailSent) {
-        successMessage += ` ✅ Check your email (${userEmail}) for confirmation.`;
+        successMessage += `\n📧 Check your email (${userEmail}) for confirmation.`;
       }
       
       if (result.adminEmailSent) {
-        successMessage += ` 📧 Admin has been notified.`;
+        successMessage += `\n👨‍💼 Admin has been notified.`;
       }
       
       setNotification({ 
@@ -170,17 +254,16 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       // Call optional onSubmit callback
       if (onSubmit) onSubmit(formData);
       
-      // Optional: Redirect after 3 seconds
+      // Clear notification after 8 seconds
       setTimeout(() => {
         setNotification({ type: null, message: '' });
-        // router.push('/dashboard'); // Uncomment to redirect
-      }, 5000);
+      }, 8000);
       
     } catch (error: any) {
       console.error('Final submission error:', error);
       setNotification({ 
         type: 'error', 
-        message: 'There was an error submitting your application. Please try again.' 
+        message: '❌ Error submitting your loan application. Please try again or contact support.' 
       });
       
       // Clear error after 5 seconds
@@ -199,8 +282,12 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
 
     if (type === 'front') {
       setFormData({ ...formData, frontIdImage: files[0] });
+      setNotification({ type: 'success', message: '✅ Front ID image uploaded successfully!' });
+      setTimeout(() => setNotification({ type: null, message: '' }), 3000);
     } else {
       setFormData({ ...formData, backIdImage: files[0] });
+      setNotification({ type: 'success', message: '✅ Back ID image uploaded successfully!' });
+      setTimeout(() => setNotification({ type: null, message: '' }), 3000);
     }
   };
 
@@ -213,20 +300,31 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       ...formData, 
       collateralImages: [...formData.collateralImages, ...newImages] 
     });
+    
+    setNotification({ 
+      type: 'success', 
+      message: `✅ ${newImages.length} collateral image(s) uploaded successfully!` 
+    });
+    setTimeout(() => setNotification({ type: null, message: '' }), 3000);
   };
 
   const removeCollateralImage = (index: number) => {
     const newImages = [...formData.collateralImages];
     newImages.splice(index, 1);
     setFormData({ ...formData, collateralImages: newImages });
+    setNotification({ type: 'success', message: '✅ Image removed successfully!' });
+    setTimeout(() => setNotification({ type: null, message: '' }), 2000);
   };
 
   const removeIdImage = (type: 'front' | 'back') => {
     if (type === 'front') {
       setFormData({ ...formData, frontIdImage: null });
+      setNotification({ type: 'success', message: '✅ Front ID image removed!' });
     } else {
       setFormData({ ...formData, backIdImage: null });
+      setNotification({ type: 'success', message: '✅ Back ID image removed!' });
     }
+    setTimeout(() => setNotification({ type: null, message: '' }), 2000);
   };
 
   return {

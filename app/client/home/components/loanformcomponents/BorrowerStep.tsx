@@ -35,7 +35,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
         <div className="space-y-4 mb-6">
           <div>
             <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Front of ID Card (Optional)
+              Front of ID Card 
             </label>
             <div className={`border-2 border-dashed rounded-lg p-4 ${
               darkMode ? 'border-gray-600' : 'border-gray-300'
@@ -77,7 +77,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
 
           <div>
             <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Back of ID Card (Optional)
+              Back of ID Card 
             </label>
             <div className={`border-2 border-dashed rounded-lg p-4 ${
               darkMode ? 'border-gray-600' : 'border-gray-300'
@@ -122,7 +122,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Date of Birth (Optional)
+              Date of Birth 
             </label>
             <input
               type="date"
@@ -138,7 +138,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
 
           <div>
             <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              National ID Number (Optional)
+              National ID Number 
             </label>
             <input
               type="text"
@@ -154,7 +154,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
 
           <div>
             <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Phone Number (Optional)
+              Phone Number 
             </label>
             <input
               type="tel"
@@ -195,7 +195,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                City (Optional)
+                City 
               </label>
               <input
                 type="text"
@@ -212,7 +212,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
 
             <div>
               <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Street (Optional)
+                Street 
               </label>
               <input
                 type="text"
@@ -229,7 +229,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
 
             <div>
               <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                House Number (Optional)
+                House Number 
               </label>
               <input
                 type="text"
