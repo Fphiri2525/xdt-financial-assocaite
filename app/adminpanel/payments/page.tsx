@@ -26,6 +26,7 @@ interface PaymentRecord {
   payment_method: string | null;
   total_amount_paid: number | string;
   total_payments: number;
+  total_repayment?: number;  // Added this field
   remaining_balance?: number;
 }
 
@@ -456,7 +457,8 @@ const PaymentRecords: React.FC = () => {
       // Calculate remaining balance for each payment record
       const paymentsWithBalance = (json.data ?? json ?? []).map((payment: any) => ({
         ...payment,
-        remaining_balance: payment.total_repayment - payment.total_amount_paid
+        total_repayment: payment.total_repayment || 0, // Ensure this field exists
+        remaining_balance: (payment.total_repayment || 0) - (payment.total_amount_paid || 0)
       }));
       
       setPayments(paymentsWithBalance);
@@ -594,7 +596,8 @@ const PaymentRecords: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map(p => {
-                  const totalRepayment = Number(p.total_repayment || 0);
+                  // Safely get values with fallbacks - FIXED HERE
+                  const totalRepayment = Number((p as any).total_repayment || 0);
                   const totalAmountPaid = Number(p.total_amount_paid || 0);
                   const remainingBalance = totalRepayment - totalAmountPaid;
                   
