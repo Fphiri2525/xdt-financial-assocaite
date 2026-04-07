@@ -6,8 +6,11 @@ export function middleware(request: NextRequest) {
   const userRole = request.cookies.get('userRole')?.value?.toLowerCase();
   const path = request.nextUrl.pathname;
 
+  // ✅ Protect these routes only
   if (path.startsWith('/adminpanel') || path.startsWith('/client')) {
+
     if (!token) {
+      // ✅ Redirect to your actual login page path
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
@@ -28,5 +31,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // ✅ Only match protected routes — NOT /admin/login itself
   matcher: ['/adminpanel/:path*', '/client/:path*'],
 };
