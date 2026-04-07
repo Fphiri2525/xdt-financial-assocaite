@@ -23,9 +23,17 @@ interface ProfileStatus {
 const API_BASE = 'https://loan-backend-production-558e.up.railway.app/api';
 
 async function fetchProfileStatus(email: string): Promise<ProfileStatus> {
-  const res = await fetch(`${API_BASE}/loans/status?email=${encodeURIComponent(email)}`);
-  if (!res.ok) return { profile_completed: 0, loan_submitted: 0 };
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/loans/status?email=${encodeURIComponent(email)}`);
+    if (!res.ok) {
+      console.error(`Profile status API returned ${res.status}: ${res.statusText}`);
+      return { profile_completed: 0, loan_submitted: 0 };
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('Error fetching profile status:', error);
+    return { profile_completed: 0, loan_submitted: 0 };
+  }
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -71,8 +79,13 @@ export default function LoanDashboard() {
     setMounted(true);
     const stored = localStorage.getItem('user');
     if (stored) {
-      try { setUserData(JSON.parse(stored)); }
-      catch { router.push('/login'); }
+      try { 
+        setUserData(JSON.parse(stored)); 
+      }
+      catch { 
+        console.error('Failed to parse user data from localStorage');
+        router.push('/login'); 
+      }
     } else {
       router.push('/login');
     }
@@ -95,8 +108,15 @@ export default function LoanDashboard() {
     try {
       const s = await fetchProfileStatus(email);
       setStatus(s);
-    } catch {
-      setStatusError('Could not check your profile status.');
+      // Only log to console, don't show error to user
+      if (s.profile_completed === 0 && s.loan_submitted === 0) {
+        console.log('No profile or loan found for email:', email);
+      }
+    } catch (error) {
+      console.error('Error loading profile status:', error);
+      // Don't set error state - just log to console
+      // User will see default form instead of error message
+      setStatus({ profile_completed: 0, loan_submitted: 0 });
     } finally {
       setStatusLoading(false);
     }
@@ -108,19 +128,25 @@ export default function LoanDashboard() {
 
   // ── Form submit ──────────────────────────────────────────────────────────────
   const handleFormSubmit = async (data: FormData) => {
+    console.log('Form submitted with data:', data);
     setSubmittedData(data);
 
     if (data.loanAmount > 0) {
       const cfg = interestRates.find(r => data.loanAmount >= r.min && data.loanAmount <= r.max)
         ?? interestRates[interestRates.length - 1];
       setTotalRepayment(data.loanAmount * cfg.rate);
+      console.log(`Calculated total repayment: ${data.loanAmount} * ${cfg.rate} = ${data.loanAmount * cfg.rate}`);
     }
 
     setShowSuccess(true);
-    if (userData?.email) await loadStatus(userData.email);
+    if (userData?.email) {
+      console.log('Refreshing profile status for:', userData.email);
+      await loadStatus(userData.email);
+    }
   };
 
   const handleApplyAgain = () => {
+    console.log('User clicked "Back to Application"');
     setShowSuccess(false);
     setSubmittedData(null);
     if (userData?.email) loadStatus(userData.email);
@@ -144,23 +170,18 @@ export default function LoanDashboard() {
     );
   }
 
-  if (statusError) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <AlertCircle size={32} className="text-red-300 mx-auto mb-3" />
-        <p className="text-gray-500 mb-4">{statusError}</p>
-        <button
-          onClick={() => userData?.email && loadStatus(userData.email)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
+  // Don't show error to user - just log to console and continue with default state
+  // The user will see the form normally even if status check fails
   const profileDone = (status?.profile_completed ?? 0) === 1;
   const loanDone    = (status?.loan_submitted    ?? 0) === 1;
+
+  // Log status for debugging
+  console.log('Profile status:', { 
+    profile_completed: status?.profile_completed, 
+    loan_submitted: status?.loan_submitted,
+    profileDone,
+    loanDone 
+  });
 
   // ── Decide what the form shows ───────────────────────────────────────────────
   //
