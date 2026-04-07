@@ -11,7 +11,7 @@ import { ReviewStep } from './loanformcomponents/ReviewStep';
 import { Step, LoanFormProps } from './loanformcomponents/type';
 import { useLoanForm } from './loanformcomponents/useLoanForm';
 
-// ─── Extended props ───────────────────────────────────────────────────────────
+
 
 interface ExtendedLoanFormProps extends LoanFormProps {
   /**
@@ -153,8 +153,8 @@ export default function LoanForm({
             formData={formData}
             setFormData={setFormData}
             isSubmitting={isSubmitting}
-            // Hide back button in partial mode — there is nowhere to go back to
-            onBack={hideCompletedSteps ? undefined : goBack}
+            // ✅ FIXED: Pass empty function instead of undefined
+            onBack={hideCompletedSteps ? () => {} : goBack}
             onImageUpload={handleCollateralImageUpload}
             onRemoveImage={removeCollateralImage}
             onSubmit={handleCollateralSubmit}
