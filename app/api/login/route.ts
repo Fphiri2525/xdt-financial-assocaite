@@ -4,13 +4,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log('📡 Calling Express at:', 'http://loan-backend-production-558e.up.railway.app/api/users/login');
+    console.log('📡 Calling Express at:', 'https://loan-backend-production-558e.up.railway.app/api/users/login');
     console.log('📦 Request body:', body);
 
     let response: Response;
 
     try {
-      response = await fetch('http://loan-backend-production-558e.up.railway.app/api/users/login', {
+      response = await fetch('https://loan-backend-production-558e.up.railway.app/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

@@ -1,62 +1,59 @@
-// app/client/home/components/LoanInfo.tsx
-'use client';
+// app/components/LoanForm/components/ProgressSteps.tsx
+import React from 'react';
+import { Step } from './type';
 
-import React, { useState } from 'react';
-import { ProgressSteps } from '../../../components/LoanForm/components/ProgressSteps';
-import { Step } from '../../../components/LoanForm/components/type';
-
-interface LoanInfoProps {
-  darkMode?: boolean;
-  initialStep?: Step;
+interface ProgressStepsProps {
+  currentStep: Step;
+  darkMode: boolean;
+  onStepClick: (step: Step) => void;
 }
 
-export default function LoanInfo({ 
-  darkMode = false, 
-  initialStep = 'borrower' 
-}: LoanInfoProps) {
-  const [currentStep, setCurrentStep] = useState<Step>(initialStep);
-
-  const handleStepClick = (step: Step) => {
-    setCurrentStep(step);
-  };
+export const ProgressSteps: React.FC<ProgressStepsProps> = ({ 
+  currentStep, 
+  darkMode, 
+  onStepClick 
+}) => {
+  const steps: Step[] = ['borrower', 'kin', 'collateral', 'review'];
+  const currentIndex = steps.indexOf(currentStep);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <ProgressSteps
-        currentStep={currentStep}
-        onStepClick={handleStepClick}
-        darkMode={darkMode}
-      />
-      
-      <div className="mt-8">
-        {currentStep === 'borrower' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Personal Details</h2>
-            {/* Add your borrower form fields here */}
-          </div>
-        )}
-        
-        {currentStep === 'kin' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Next of Kin</h2>
-            {/* Add your next of kin form fields here */}
-          </div>
-        )}
-        
-        {currentStep === 'collateral' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Collateral Information</h2>
-            {/* Add your collateral form fields here */}
-          </div>
-        )}
-        
-        {currentStep === 'review' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Review Application</h2>
-            {/* Add review summary here */}
-          </div>
-        )}
+    <div className="mb-8">
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => (
+          <React.Fragment key={step}>
+            <div className="flex flex-col items-center">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all ${
+                  currentStep === step 
+                    ? 'bg-blue-600 text-white ring-2 ring-blue-300 scale-110' 
+                    : index < currentIndex
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : darkMode 
+                      ? 'bg-gray-700 text-gray-400 hover:bg-gray-600' 
+                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+                onClick={() => onStepClick(step)}
+              >
+                {index + 1}
+              </div>
+              <span className={`text-xs mt-2 ${
+                darkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {step === 'borrower' ? 'Personal Details' : 
+                 step === 'kin' ? 'Next of Kin' : 
+                 step === 'collateral' ? 'Collateral' : 'Review'}
+              </span>
+            </div>
+            {index < steps.length - 1 && (
+              <div className={`flex-1 h-1 mx-2 ${
+                index < currentIndex
+                  ? 'bg-green-500'
+                  : darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`} />
+            )}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );
-}
+};

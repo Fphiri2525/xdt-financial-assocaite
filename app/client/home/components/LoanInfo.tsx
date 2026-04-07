@@ -1,16 +1,15 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ChevronRight, CheckCircle } from 'lucide-react';
-import { LoanFormProps } from '../components/loanformcomponents/type';
-import { useLoanForm } from '../components/loanformcomponents/useLoanForm';
-import { ProgressSteps } from '../components/loanformcomponents/ProgressSteps';
-import { Notification } from '../components/loanformcomponents/notification';
-import { BorrowerStep } from '../components/loanformcomponents/BorrowerStep';
-import { KinStep } from '../components/loanformcomponents/KinStep';
-import { CollateralStep } from '../components/loanformcomponents/CollateralStep';
-import { ReviewStep } from '../components/loanformcomponents/ReviewStep';
-import { Step } from '../components/loanformcomponents/type';
+import { ChevronRight } from 'lucide-react';
+import { ProgressSteps } from './loanformcomponents/ProgressSteps';
+import { Notification } from './loanformcomponents/notification';
+import { BorrowerStep } from './loanformcomponents/BorrowerStep';
+import { KinStep } from './loanformcomponents/KinStep';
+import { CollateralStep } from './loanformcomponents/CollateralStep';
+import { ReviewStep } from './loanformcomponents/ReviewStep';
+import { Step, LoanFormProps } from './loanformcomponents/type';
+import { useLoanForm } from './loanformcomponents/useLoanForm';
 
 // ─── Extended props ───────────────────────────────────────────────────────────
 
