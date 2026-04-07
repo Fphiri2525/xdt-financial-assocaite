@@ -82,9 +82,23 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
     }
 
     try {
+      console.log('📤 Submitting borrower data for email:', userEmail);
+      console.log('📦 Borrower data payload:', {
+        email: userEmail,
+        dateOfBirth: formData.dateOfBirth,
+        nationalId: formData.nationalId,
+        phone: formData.borrowerPhone,
+        alternativePhone: formData.alternativePhone,
+        city: formData.city,
+        street: formData.street,
+        streetAddress: formData.streetAddress
+      });
+
       const result = await submitBorrowerData(userEmail, formData);
       
-      if (result.profileId) {
+      console.log('📥 Borrower submission response:', result);
+      
+      if (result && result.profileId) {
         setProfileId(result.profileId);
         setNotification({ 
           type: 'success', 
@@ -104,10 +118,16 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       }, 2000);
       
     } catch (error: any) {
-      console.error('Borrower submission error:', error);
+      console.error('❌ Borrower submission error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.status
+      });
+      
       setNotification({ 
         type: 'error', 
-        message: '❌ Error while saving personal details. Please check your information and try again.' 
+        message: `❌ Error while saving personal details: ${error.message || 'Please check your information and try again.'}` 
       });
       
       // Clear error after 5 seconds
@@ -136,7 +156,19 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
     }
 
     try {
+      console.log('📤 Submitting kin data for email:', userEmail);
+      console.log('📦 Kin data payload:', {
+        email: userEmail,
+        kinFullName: formData.kinFullName,
+        kinPhone: formData.kinPhone,
+        kinRelationship: formData.kinRelationship,
+        occupationName: formData.occupationName,
+        businessName: formData.businessName,
+        monthlyIncome: formData.monthlyIncome
+      });
+
       await submitKinData(userEmail, formData);
+      
       setNotification({ 
         type: 'success', 
         message: '✅ Next of kin and employment details saved successfully!' 
@@ -148,10 +180,10 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       }, 2000);
       
     } catch (error: any) {
-      console.error('Kin submission error:', error);
+      console.error('❌ Kin submission error:', error);
       setNotification({ 
         type: 'error', 
-        message: '❌ Error while saving next of kin details. Please try again.' 
+        message: `❌ Error while saving next of kin details: ${error.message || 'Please try again.'}` 
       });
       
       setTimeout(() => {
@@ -179,7 +211,22 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
     }
 
     try {
+      console.log('📤 Submitting collateral data for email:', userEmail);
+      console.log('📦 Collateral data payload:', {
+        email: userEmail,
+        collateralType: formData.collateralType,
+        collateralDescription: formData.collateralDescription,
+        collateralImagesCount: formData.collateralImages?.length || 0
+      });
+
+      // ✅ FIXED: Don't try to get collateralId from result if it doesn't exist
       await submitCollateralData(userEmail, formData);
+      
+      // Remove the line that tries to access result.collateralId
+      // if (result.collateralId) {
+      //   setCollateralId(result.collateralId);
+      // }
+      
       setNotification({ 
         type: 'success', 
         message: '✅ Collateral details saved successfully! You can now review your application.' 
@@ -191,10 +238,10 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       }, 2000);
       
     } catch (error: any) {
-      console.error('Collateral submission error:', error);
+      console.error('❌ Collateral submission error:', error);
       setNotification({ 
         type: 'error', 
-        message: '❌ Error while saving collateral details. Please check your information and try again.' 
+        message: `❌ Error while saving collateral details: ${error.message || 'Please check your information and try again.'}` 
       });
       
       setTimeout(() => {
@@ -233,7 +280,7 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       const result = await submitLoanApplication(userEmail, formData, userName);
       
       // Store loan ID if returned
-      if (result.loanId) setLoanId(result.loanId);
+      if (result && result.loanId) setLoanId(result.loanId);
       
       // Show success message with email status
       let successMessage = '✅ ' + result.message;
@@ -260,10 +307,10 @@ export const useLoanForm = (userEmail: string, userName?: string, onSubmit?: (da
       }, 8000);
       
     } catch (error: any) {
-      console.error('Final submission error:', error);
+      console.error('❌ Final submission error:', error);
       setNotification({ 
         type: 'error', 
-        message: '❌ Error submitting your loan application. Please try again or contact support.' 
+        message: `❌ Error submitting your loan application: ${error.message || 'Please try again or contact support.'}` 
       });
       
       // Clear error after 5 seconds

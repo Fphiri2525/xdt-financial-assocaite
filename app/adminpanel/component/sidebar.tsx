@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       name: 'Loan Applications',
-      href: '/adminpanel/loan-applications',
+      href: '/adminpanel/Recentapplication',
       icon: FileText,
       color: 'text-purple-500',
       bgColor: 'bg-purple-50',

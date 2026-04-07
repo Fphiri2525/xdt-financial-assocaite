@@ -61,7 +61,7 @@ const PAYMENT_METHODS = [
   'Cash',
 ];
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://loan-backend-production-558e.up.railway.app';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://loan-backend-production-558e.up.railway.app';
 
 // ─── Dropdown Component ───────────────────────────────────────────────────────
 
@@ -165,18 +165,76 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
       try {
         setLoadingUsers(true);
         setUsersError('');
-        const res = await fetch(`${API}/api/loans/incomplete-users`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const apiUrl = `${API}/api/loans/incomplete-users?page=1&limit=50`;
+        console.log('🌐 Fetching users from:', apiUrl);
+        
+        const res = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('📡 Response status:', res.status);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const json = await res.json();
-
-        const list: LoanUser[] = json.data ?? json ?? [];
-        setUsers(list);
+        console.log('✅ API Response:', json);
+        
+        let userList = [];
+        
+        if (json.success === true && Array.isArray(json.data)) {
+          userList = json.data;
+          console.log(`📊 Found ${userList.length} users in json.data`);
+        } else if (Array.isArray(json)) {
+          userList = json;
+          console.log(`📊 Found ${userList.length} users in direct array`);
+        } else if (json.data && Array.isArray(json.data)) {
+          userList = json.data;
+          console.log(`📊 Found ${userList.length} users in data property`);
+        } else {
+          console.error('Unknown response format:', Object.keys(json));
+          userList = [];
+        }
+        
+        if (userList.length === 0) {
+          setUsersError('No clients with active loans found');
+          setUsers([]);
+          return;
+        }
+        
+        const mappedUsers: LoanUser[] = userList.map((user: any) => ({
+          user_id: user.user_id,
+          username: user.username || 'Unknown',
+          email: user.email,
+          loan_id: user.loan_id,
+          loan_amount: parseFloat(user.loan_amount) || 0,
+          total_repayment: parseFloat(user.total_repayment) || 0,
+          status: user.status || 'pending'
+        }));
+        
+        console.log('✅ Mapped users:', mappedUsers);
+        setUsers(mappedUsers);
+        
       } catch (err: any) {
-        setUsersError('Failed to load users. Check your connection.');
+        console.error('❌ Fetch error:', err);
+        
+        if (err.message.includes('Failed to fetch')) {
+          setUsersError(`Cannot connect to server. Please check if the API is running.`);
+        } else if (err.message.includes('HTTP 404')) {
+          setUsersError(`API endpoint not found. Please check the API URL.`);
+        } else {
+          setUsersError(`Failed to load users: ${err.message}`);
+        }
       } finally {
         setLoadingUsers(false);
       }
     };
+    
     fetchUsers();
   }, []);
 
@@ -266,6 +324,27 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
           </button>
         </div>
 
+        {/* Debug Button */}
+        <div className="px-6 pt-4">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch(`${API}/api/loans/incomplete-users?page=1&limit=50`);
+                const data = await res.json();
+                console.log('Manual test - Response:', data);
+                alert(`Success! Found ${data.data?.length || 0} users. Check console.`);
+              } catch (err: any) {
+                console.error('Manual test error:', err);
+                alert(`Error: ${err.message}`);
+              }
+            }}
+            className="w-full px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200"
+          >
+            🔧 Test API Connection
+          </button>
+        </div>
+
         {/* Body */}
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
 
@@ -315,12 +394,17 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
             {loadingUsers ? (
               <div className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50">
                 <Loader2 size={14} className="animate-spin text-gray-400" />
-                <span className="text-sm text-gray-400">Loading clients…</span>
+                <span className="text-sm text-gray-400">Loading clients...</span>
               </div>
             ) : usersError ? (
               <div className="flex items-center gap-2 px-3 py-2.5 border border-red-200 rounded-lg bg-red-50">
                 <AlertCircle size={14} className="text-red-400" />
                 <span className="text-sm text-red-500">{usersError}</span>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="flex items-center gap-2 px-3 py-2.5 border border-yellow-200 rounded-lg bg-yellow-50">
+                <AlertCircle size={14} className="text-yellow-500" />
+                <span className="text-sm text-yellow-600">No clients with active loans found.</span>
               </div>
             ) : (
               <Dropdown
@@ -330,15 +414,22 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
                 onChange={setSelectedEmail}
               />
             )}
-            {users.length === 0 && !loadingUsers && !usersError && (
-              <p className="text-xs text-gray-400">No clients with active loans found.</p>
-            )}
           </div>
 
           {/* Loan Info */}
           {selectedUser && (
             <div className="bg-gray-50 rounded-lg p-3 space-y-1">
-              <p className="text-xs text-gray-500">Loan Information</p>
+              <p className="text-xs text-gray-500 font-medium">Loan Information</p>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Client:</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {selectedUser.username}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Email:</span>
+                <span className="text-xs text-gray-600">{selectedUser.email}</span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-600">Loan Amount:</span>
                 <span className="text-sm font-semibold text-gray-900">
@@ -356,6 +447,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                   selectedUser.status === 'active' ? 'bg-green-100 text-green-700' :
                   selectedUser.status === 'approved' ? 'bg-blue-100 text-blue-700' :
+                  selectedUser.status === 'rejected' ? 'bg-red-100 text-red-700' :
                   'bg-yellow-100 text-yellow-700'
                 }`}>
                   {selectedUser.status.toUpperCase()}
@@ -420,11 +512,11 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ onClose, onSuccess })
             </button>
             <button
               type="submit"
-              disabled={submitting || success}
+              disabled={submitting || success || !selectedUser}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors"
             >
               {submitting ? (
-                <><Loader2 size={14} className="animate-spin" /> Processing…</>
+                <><Loader2 size={14} className="animate-spin" /> Processing...</>
               ) : success ? (
                 <><CheckCircle2 size={14} /> Recorded!</>
               ) : (
@@ -453,19 +545,40 @@ const PaymentRecords: React.FC = () => {
       setLoading(true);
       setError('');
       const res = await fetch(`${API}/api/loan-payments/paid-users`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
       
-      // Map and calculate remaining balance for each payment record
-      const paymentsWithBalance = (json.data ?? json ?? []).map((payment: any) => ({
-        ...payment,
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      const json = await res.json();
+      console.log('Paid users response:', json);
+      
+      let paymentsList = [];
+      
+      if (json.success && Array.isArray(json.data)) {
+        paymentsList = json.data;
+      } else if (Array.isArray(json)) {
+        paymentsList = json;
+      } else {
+        paymentsList = [];
+      }
+      
+      const paymentsWithBalance = paymentsList.map((payment: any) => ({
+        payment_id: payment.payment_id || payment.loan_id,
+        loan_id: payment.loan_id,
+        username: payment.username || 'Unknown',
+        email: payment.email,
+        amount_paid: payment.amount_paid || payment.total_amount_paid || 0,
+        payment_date: payment.payment_date || payment.last_payment_date,
+        payment_method: payment.payment_method,
+        total_amount_paid: payment.total_amount_paid || 0,
+        total_payments: payment.total_payments || 0,
+        total_repayment: payment.total_repayment || 0,
         remaining_balance: (payment.total_repayment || 0) - (payment.total_amount_paid || 0)
       }));
       
       setPayments(paymentsWithBalance);
     } catch (err: any) {
-      setError('Failed to load payment records.');
       console.error('Fetch error:', err);
+      setError('Failed to load payment records.');
     } finally {
       setLoading(false);
     }
@@ -483,6 +596,18 @@ const PaymentRecords: React.FC = () => {
   // Helper function to format currency
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-MW', { minimumFractionDigits: 2 }).format(amount);
+  };
+
+  // Helper function to safely get remaining balance
+  const getRemainingBalance = (payment: PaymentRecord): number => {
+    return payment.remaining_balance ?? 0;
+  };
+
+  // Helper function to safely get total amount paid
+  const getTotalAmountPaid = (payment: PaymentRecord): number => {
+    return typeof payment.total_amount_paid === 'number' 
+      ? payment.total_amount_paid 
+      : parseFloat(payment.total_amount_paid as string) || 0;
   };
 
   return (
@@ -569,13 +694,13 @@ const PaymentRecords: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredPayments.map((payment) => {
-                const totalRepayment = Number(payment.total_repayment || 0);
-                const totalAmountPaid = Number(payment.total_amount_paid || 0);
-                const remainingBalance = totalRepayment - totalAmountPaid;
+              {filteredPayments.map((payment, index) => {
+                const remainingBalance = getRemainingBalance(payment);
+                const totalAmountPaid = getTotalAmountPaid(payment);
+                const isFullyPaid = remainingBalance <= 0;
                 
                 return (
-                  <tr key={payment.payment_id || `${payment.loan_id}-${payment.email}`} className="hover:bg-gray-50">
+                  <tr key={payment.payment_id || index} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <p className="text-sm font-medium text-gray-900">{payment.username || '—'}</p>
                     </td>
@@ -595,7 +720,7 @@ const PaymentRecords: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {remainingBalance <= 0 ? (
+                      {isFullyPaid ? (
                         <span className="inline-flex px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
                           Fully Paid
                         </span>
@@ -609,7 +734,7 @@ const PaymentRecords: React.FC = () => {
                 );
               })}
             </tbody>
-          </table>
+           </table>
         )}
       </div>
 
