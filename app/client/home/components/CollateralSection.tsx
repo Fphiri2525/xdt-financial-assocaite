@@ -1,7 +1,7 @@
 // app/components/LoanForm/components/steps/CollateralStep.tsx
 import React from 'react';
 import { ChevronLeft, ChevronRight, Camera, X } from 'lucide-react';
-import { FormData } from './type';
+import { FormData } from '../components/loanformcomponents/type';
 
 interface CollateralStepProps {
   darkMode: boolean;
