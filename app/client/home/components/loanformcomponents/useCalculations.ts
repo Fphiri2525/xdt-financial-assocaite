@@ -1,6 +1,6 @@
 // app/components/LoanForm/hooks/useCalculations.ts
 import { useState, useEffect } from 'react';
-import { InterestRate } from '../types';
+import { InterestRate } from'../loanformcomponents/type';
 
 export const useCalculations = (loanAmount: number) => {
   const [calculatedInterest, setCalculatedInterest] = useState(0);
