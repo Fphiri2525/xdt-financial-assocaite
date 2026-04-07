@@ -109,7 +109,7 @@ interface TableRow {
 // ✅ FIX 1: Single source of truth for API base URL
 // All fetch calls now use this — no more hardcoded localhost strings
 // ─────────────────────────────────────────────
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://loan-backend-production-558e.up.railway.app/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
