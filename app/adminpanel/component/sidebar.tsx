@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     {
       name: 'Profile',
-      href: '/adminpanel/profile',
+      href: '/adminpanel/settings',
       icon: UserCircle,
       color: 'text-teal-500',
       bgColor: 'bg-teal-50',
