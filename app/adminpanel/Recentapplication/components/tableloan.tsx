@@ -8,7 +8,11 @@ import {
   ChevronRight, AlertCircle, Package, Car, Home,
   Landmark, Box, DollarSign
 } from 'lucide-react';
+import FilterHeader from "./search"; // Adjust the import path as needed
 
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 interface UserInfo {
   user_id: number;
   username: string;
@@ -92,6 +96,7 @@ interface TableRow {
   applicant_name: string;
   national_id: string;
   email: string;
+  phone: string;
   loan_amount: number;
   status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed';
   duration_weeks: number;
@@ -100,16 +105,81 @@ interface TableRow {
   employment_status: string;
   collateral_count: number;
   collateral_value: number;
+  application_date?: string;
+  loan_type?: string;
 }
 
+interface DateRange {
+  start: string;
+  end: string;
+}
+
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// ✅ UPDATED: Cloudinary URLs are always full https:// — just return as-is
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
-  return imagePath;
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
+  return `${API_BASE_URL.replace('/api', '')}/uploads/${imagePath.replace(/^\/+/, '')}`;
 };
 
+// ─────────────────────────────────────────────
+// Helper Functions for Filtering
+// ─────────────────────────────────────────────
+const filterRows = (
+  rows: TableRow[],
+  searchTerm: string,
+  statusFilter: string,
+  loanTypeFilter: string,
+  dateRange: DateRange
+): TableRow[] => {
+  return rows.filter((row) => {
+    // Search filter (name, phone, email, national ID)
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        row.applicant_name.toLowerCase().includes(searchLower) ||
+        (row.phone && row.phone.toLowerCase().includes(searchLower)) ||
+        row.email.toLowerCase().includes(searchLower) ||
+        row.national_id.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+
+    // Status filter
+    if (statusFilter) {
+      const statusMatch = row.status.toLowerCase() === statusFilter.toLowerCase();
+      if (!statusMatch) return false;
+    }
+
+    // Loan type filter
+    if (loanTypeFilter && row.loan_type) {
+      const typeMatch = row.loan_type.toLowerCase() === loanTypeFilter.toLowerCase();
+      if (!typeMatch) return false;
+    }
+
+    // Date range filter
+    if (dateRange.start && row.application_date) {
+      const appDate = new Date(row.application_date);
+      const startDate = new Date(dateRange.start);
+      if (appDate < startDate) return false;
+    }
+    
+    if (dateRange.end && row.application_date) {
+      const appDate = new Date(row.application_date);
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59); // Include the entire end date
+      if (appDate > endDate) return false;
+    }
+
+    return true;
+  });
+};
+
+// ─────────────────────────────────────────────
+// Collateral helpers
+// ─────────────────────────────────────────────
 type CollateralStyle = {
   badge: string;
   dot: string;
@@ -151,11 +221,14 @@ const getCollateralStyle = (type: string): CollateralStyle => {
   };
 };
 
+// ─────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────
 function InlineImage({ imagePath, label }: { imagePath: string; label: string }) {
   const [errored, setErrored] = useState(false);
   return (
     <div className="rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm group">
-      <div className="w-full h-40 bg-slate-100 flex items-center justify-center overflow-hidden">
+      <div className="w-full h-40 bg-white flex items-center justify-center overflow-hidden">
         {!errored ? (
           <img
             src={getImageUrl(imagePath)}
@@ -170,7 +243,7 @@ function InlineImage({ imagePath, label }: { imagePath: string; label: string })
           </div>
         )}
       </div>
-      <div className="px-3 py-2 bg-slate-50 border-t border-slate-100">
+      <div className="px-3 py-2 bg-white border-t border-slate-100">
         <p className="text-xs font-semibold text-slate-700 capitalize truncate">{label}</p>
       </div>
     </div>
@@ -454,17 +527,32 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
   );
 }
 
+// ─────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────
 export default function RecentApplications() {
-  const [rows, setRows] = useState<TableRow[]>([]);
+  const [allRows, setAllRows] = useState<TableRow[]>([]);
+  const [filteredRows, setFilteredRows] = useState<TableRow[]>([]);
   const [allDetails, setAllDetails] = useState<UserDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<UserDetails | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
   const [loanStatuses, setLoanStatuses] = useState<Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'>>({});
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [loanTypeFilter, setLoanTypeFilter] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>({ start: '', end: '' });
 
   useEffect(() => { fetchData(); }, []);
+
+  // Apply filters whenever filter criteria or data changes
+  useEffect(() => {
+    const filtered = filterRows(allRows, searchTerm, statusFilter, loanTypeFilter, dateRange);
+    setFilteredRows(filtered);
+  }, [allRows, searchTerm, statusFilter, loanTypeFilter, dateRange]);
 
   const fetchData = async () => {
     try {
@@ -473,18 +561,31 @@ export default function RecentApplications() {
       const res = await fetch(`${API_BASE_URL}/profile/all-details`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: ApiResponse = await res.json();
+      
+      // Store all details for modal
       setAllDetails(data.data ?? []);
+      
+      // Build table rows
       const tableRows: TableRow[] = [];
       (data.data ?? []).forEach((ud) => {
         if (!ud?.user || !Array.isArray(ud.loans)) return;
         const totalCollateralValue = (ud.collateral ?? []).reduce((s, c) => s + (c.estimated_value || 0), 0);
         ud.loans.forEach((loan) => {
+          // Determine loan type based on collateral or employment
+          let loanType = 'Personal';
+          if (ud.collateral && ud.collateral.length > 0) {
+            loanType = 'Business';
+          } else if (ud.employment && ud.employment.monthly_income > 5000) {
+            loanType = 'Business';
+          }
+          
           tableRows.push({
             loan_id:           loan.loan_id,
             user_id:           ud.user.user_id,
             applicant_name:    ud.user.username || 'Unknown',
             national_id:       ud.user.national_id || '—',
             email:             ud.user.email || '—',
+            phone:             ud.user.phone || '—',
             loan_amount:       loan.loan_amount || 0,
             status:            loan.status || 'pending',
             duration_weeks:    loan.duration_weeks || 0,
@@ -493,11 +594,14 @@ export default function RecentApplications() {
             employment_status: ud.employment?.employment_status || 'N/A',
             collateral_count:  (ud.collateral ?? []).length,
             collateral_value:  totalCollateralValue,
+            application_date:  new Date().toISOString().split('T')[0], // You might want to get this from your API
+            loan_type: loanType,
           });
         });
       });
       tableRows.sort((a, b) => b.loan_id - a.loan_id);
-      setRows(tableRows.slice(0, 15));
+      setAllRows(tableRows);
+      
       const statusMap: Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'> = {};
       tableRows.forEach((r) => { statusMap[r.loan_id] = r.status; });
       setLoanStatuses(statusMap);
@@ -510,17 +614,14 @@ export default function RecentApplications() {
   };
 
   const handleView = (userId: number) => {
-    setModalLoading(true);
-    setIsModalOpen(true);
-    setSelectedDetail(null);
     const detail = allDetails.find((d) => d.user.user_id === userId) ?? null;
     setSelectedDetail(detail);
-    setModalLoading(false);
+    setIsModalOpen(true);
   };
 
   const handleLoanStatusChange = (loanId: number, newStatus: 'approved' | 'rejected') => {
     setLoanStatuses((prev) => ({ ...prev, [loanId]: newStatus }));
-    setRows((prev) => prev.map((r) => r.loan_id === loanId ? { ...r, status: newStatus } : r));
+    setAllRows((prev) => prev.map((r) => r.loan_id === loanId ? { ...r, status: newStatus } : r));
     setSelectedDetail((prev) => {
       if (!prev) return prev;
       return {
@@ -530,10 +631,19 @@ export default function RecentApplications() {
     });
   };
 
-  const fmt    = (v: number) => `K${(v ?? 0).toLocaleString()}`;
+  const handleRefresh = () => {
+    fetchData();
+    // Reset filters
+    setSearchTerm('');
+    setStatusFilter('');
+    setLoanTypeFilter('');
+    setDateRange({ start: '', end: '' });
+  };
+
+  const fmt = (v: number) => `K${(v ?? 0).toLocaleString()}`;
   const fmtPct = (r: number) => `${((r || 0) * 100).toFixed(0)}%`;
 
-  const pendingCount = rows.filter((r) => (loanStatuses[r.loan_id] ?? r.status) === 'pending').length;
+  const pendingCount = filteredRows.filter((r) => (loanStatuses[r.loan_id] ?? r.status) === 'pending').length;
 
   if (loading) {
     return (
@@ -563,103 +673,125 @@ export default function RecentApplications() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-xl">
-              <FileText size={16} className="text-blue-600" />
+      <div className="space-y-4">
+        {/* Filter Header */}
+        <FilterHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          loanTypeFilter={loanTypeFilter}
+          onLoanTypeChange={setLoanTypeFilter}
+          onRefresh={handleRefresh}
+        />
+
+        {/* Applications Table */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-xl">
+                <FileText size={16} className="text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Loan Applications</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Showing {filteredRows.length} of {allRows.length} applications
+                </p>
+              </div>
+              {pendingCount > 0 && (
+                <span className="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-700 rounded-full border border-amber-200">
+                  {pendingCount} pending
+                </span>
+              )}
             </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Loan Applications</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Recent submissions requiring review</p>
+            <div className="flex items-center gap-1.5">
+              <button onClick={handleRefresh} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer" title="Refresh">
+                <RefreshCw size={15} />
+              </button>
+              <button className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
+                <Download size={15} />
+              </button>
             </div>
-            {pendingCount > 0 && (
-              <span className="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-700 rounded-full border border-amber-200">
-                {pendingCount} pending
-              </span>
+          </div>
+
+          <div className="overflow-x-auto bg-white">
+            {filteredRows.length === 0 ? (
+              <div className="text-center py-16 bg-white">
+                <FileText size={40} className="mx-auto text-slate-200 mb-3" />
+                <p className="text-slate-400 text-sm">No applications match your filters</p>
+                <button
+                  onClick={handleRefresh}
+                  className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <table className="w-full bg-white">
+                <thead className="bg-slate-50">
+                  <tr className="border-y border-slate-200">
+                    {['Applicant', 'National ID', 'Email', 'Loan Amount', 'Status', 'Actions'].map((h) => (
+                      <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredRows.map((row) => {
+                    const liveStatus = loanStatuses[row.loan_id] ?? row.status;
+                    return (
+                      <tr key={row.loan_id} className="hover:bg-slate-50 transition-colors bg-white">
+                        <td className="px-5 py-3.5 bg-white">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {row.applicant_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 leading-tight">{row.applicant_name}</p>
+                              <p className="text-[11px] text-slate-400">Loan #{row.loan_id}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 bg-white">
+                          <span className="text-sm font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">{row.national_id}</span>
+                        </td>
+                        <td className="px-5 py-3.5 bg-white">
+                          <p className="text-sm text-slate-600">{row.email}</p>
+                        </td>
+                        <td className="px-5 py-3.5 bg-white">
+                          <p className="text-sm font-bold text-slate-900">{fmt(row.loan_amount)}</p>
+                          <p className="text-[11px] text-slate-400">{row.duration_weeks} wks @ {fmtPct(row.interest_rate)}</p>
+                        </td>
+                        <td className="px-5 py-3.5 bg-white">
+                          <StatusBadge status={liveStatus} />
+                        </td>
+                        <td className="px-5 py-3.5 bg-white">
+                          <button
+                            onClick={() => handleView(row.user_id)}
+                            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-white font-semibold
+                              bg-white hover:bg-blue-600 border border-blue-200 hover:border-blue-600
+                              px-3.5 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                          >
+                            <Eye size={14} />
+                            View More
+                            <ChevronRight size={12} className="-ml-0.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <button onClick={fetchData} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer" title="Refresh">
-              <RefreshCw size={15} />
-            </button>
-            <button className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
-              <Filter size={15} />
-            </button>
-            <button className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
-              <Download size={15} />
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto bg-white">
-          {rows.length === 0 ? (
-            <div className="text-center py-16 bg-white">
-              <FileText size={40} className="mx-auto text-slate-200 mb-3" />
-              <p className="text-slate-400 text-sm">No applications found</p>
-            </div>
-          ) : (
-            <table className="w-full bg-white">
-              <thead className="bg-slate-50">
-                <tr className="border-y border-slate-200">
-                  {['Applicant', 'National ID', 'Email', 'Loan Amount', 'Status', 'Actions'].map((h) => (
-                    <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {rows.map((row) => {
-                  const liveStatus = loanStatuses[row.loan_id] ?? row.status;
-                  return (
-                    <tr key={row.loan_id} className="hover:bg-slate-50 transition-colors bg-white">
-                      <td className="px-5 py-3.5 bg-white">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                            {row.applicant_name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900 leading-tight">{row.applicant_name}</p>
-                            <p className="text-[11px] text-slate-400">Loan #{row.loan_id}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 bg-white">
-                        <span className="text-sm font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">{row.national_id}</span>
-                      </td>
-                      <td className="px-5 py-3.5 bg-white">
-                        <p className="text-sm text-slate-600">{row.email}</p>
-                      </td>
-                      <td className="px-5 py-3.5 bg-white">
-                        <p className="text-sm font-bold text-slate-900">{fmt(row.loan_amount)}</p>
-                        <p className="text-[11px] text-slate-400">{row.duration_weeks} wks @ {fmtPct(row.interest_rate)}</p>
-                      </td>
-                      <td className="px-5 py-3.5 bg-white">
-                        <StatusBadge status={liveStatus} />
-                      </td>
-                      <td className="px-5 py-3.5 bg-white">
-                        <button
-                          onClick={() => handleView(row.user_id)}
-                          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-white font-semibold
-                            bg-white hover:bg-blue-600 border border-blue-200 hover:border-blue-600
-                            px-3.5 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
-                        >
-                          <Eye size={14} />
-                          View More
-                          <ChevronRight size={12} className="-ml-0.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
         </div>
       </div>
 
-      {isModalOpen && (
+      {/* Modal - Same as before */}
+      {isModalOpen && selectedDetail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-200">
             <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between rounded-t-2xl shrink-0">
@@ -669,11 +801,9 @@ export default function RecentApplications() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Application Details</h3>
-                  {selectedDetail && (
-                    <p className="text-xs text-slate-500">
-                      {selectedDetail.user.username} · {selectedDetail.user.email}
-                    </p>
-                  )}
+                  <p className="text-xs text-slate-500">
+                    {selectedDetail.user.username} · {selectedDetail.user.email}
+                  </p>
                 </div>
               </div>
               <button
@@ -685,139 +815,126 @@ export default function RecentApplications() {
             </div>
 
             <div className="overflow-y-auto flex-1 p-6 space-y-5 bg-slate-50">
-              {modalLoading ? (
-                <div className="flex justify-center py-20 bg-white rounded-xl">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              <SectionCard icon={User} title="Personal Information">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                  <InfoField label="Full Name"     value={selectedDetail.user.username} />
+                  <InfoField label="Email"         value={selectedDetail.user.email} />
+                  <InfoField label="National ID"   value={
+                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">
+                      {selectedDetail.user.national_id || '—'}
+                    </span>
+                  } />
+                  <InfoField label="Phone"         value={selectedDetail.user.phone || '—'} />
+                  <InfoField label="Date of Birth" value={selectedDetail.user.date_of_birth || '—'} />
+                  <InfoField label="City"          value={selectedDetail.user.city || '—'} />
+                  <InfoField label="Street"        value={selectedDetail.user.street || '—'} />
+                  <InfoField label="Alt. Phone"    value={selectedDetail.user.alternative_phone || '—'} />
                 </div>
-              ) : selectedDetail ? (
-                <>
-                  <SectionCard icon={User} title="Personal Information">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                      <InfoField label="Full Name"     value={selectedDetail.user.username} />
-                      <InfoField label="Email"         value={selectedDetail.user.email} />
-                      <InfoField label="National ID"   value={
-                        <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">
-                          {selectedDetail.user.national_id || '—'}
-                        </span>
-                      } />
-                      <InfoField label="Phone"         value={selectedDetail.user.phone || '—'} />
-                      <InfoField label="Date of Birth" value={selectedDetail.user.date_of_birth || '—'} />
-                      <InfoField label="City"          value={selectedDetail.user.city || '—'} />
-                      <InfoField label="Street"        value={selectedDetail.user.street || '—'} />
-                      <InfoField label="Alt. Phone"    value={selectedDetail.user.alternative_phone || '—'} />
+              </SectionCard>
+
+              {selectedDetail.employment && (
+                <SectionCard icon={Briefcase} title="Employment Details">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                    <InfoField label="Occupation"     value={selectedDetail.employment.occupation} />
+                    <InfoField label="Employer"       value={selectedDetail.employment.employer_name} />
+                    <InfoField label="Job Title"      value={selectedDetail.employment.job_title} />
+                    <InfoField label="Status"         value={selectedDetail.employment.employment_status} />
+                    <InfoField label="Monthly Income" value={fmt(selectedDetail.employment.monthly_income)} accent="text-emerald-600" />
+                    <InfoField label="Years Employed" value={`${selectedDetail.employment.years_employed} yrs`} />
+                    <div className="col-span-2 md:col-span-3">
+                      <InfoField label="Work Address" value={selectedDetail.employment.work_address} />
                     </div>
-                  </SectionCard>
+                  </div>
+                </SectionCard>
+              )}
 
-                  {selectedDetail.employment && (
-                    <SectionCard icon={Briefcase} title="Employment Details">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                        <InfoField label="Occupation"     value={selectedDetail.employment.occupation} />
-                        <InfoField label="Employer"       value={selectedDetail.employment.employer_name} />
-                        <InfoField label="Job Title"      value={selectedDetail.employment.job_title} />
-                        <InfoField label="Status"         value={selectedDetail.employment.employment_status} />
-                        <InfoField label="Monthly Income" value={fmt(selectedDetail.employment.monthly_income)} accent="text-emerald-600" />
-                        <InfoField label="Years Employed" value={`${selectedDetail.employment.years_employed} yrs`} />
-                        <div className="col-span-2 md:col-span-3">
-                          <InfoField label="Work Address" value={selectedDetail.employment.work_address} />
-                        </div>
-                      </div>
-                    </SectionCard>
-                  )}
+              {selectedDetail.next_of_kin && (
+                <SectionCard icon={Phone} title="Next of Kin">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                    <InfoField label="Full Name"    value={selectedDetail.next_of_kin.full_name} />
+                    <InfoField label="Relationship" value={selectedDetail.next_of_kin.relationship} />
+                    <InfoField label="Phone"        value={selectedDetail.next_of_kin.phone} />
+                  </div>
+                </SectionCard>
+              )}
 
-                  {selectedDetail.next_of_kin && (
-                    <SectionCard icon={Phone} title="Next of Kin">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                        <InfoField label="Full Name"    value={selectedDetail.next_of_kin.full_name} />
-                        <InfoField label="Relationship" value={selectedDetail.next_of_kin.relationship} />
-                        <InfoField label="Phone"        value={selectedDetail.next_of_kin.phone} />
-                      </div>
-                    </SectionCard>
-                  )}
+              {selectedDetail.id_images?.length > 0 && (
+                <SectionCard icon={ImageIcon} title="ID Documents">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedDetail.id_images.map((img) => (
+                      <InlineImage key={img.id} imagePath={img.image_path} label={img.image_type} />
+                    ))}
+                  </div>
+                </SectionCard>
+              )}
 
-                  {selectedDetail.id_images?.length > 0 && (
-                    <SectionCard icon={ImageIcon} title="ID Documents">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {selectedDetail.id_images.map((img) => (
-                          <InlineImage key={img.id} imagePath={img.image_path} label={img.image_type} />
-                        ))}
-                      </div>
-                    </SectionCard>
-                  )}
-
-                  {selectedDetail.collateral?.length > 0 ? (
-                    <CollateralSection collateral={selectedDetail.collateral} />
-                  ) : (
-                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                      <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-50 border-b border-slate-200">
-                        <div className="p-1.5 bg-blue-100 rounded-lg">
-                          <Shield size={13} className="text-blue-600" />
-                        </div>
-                        <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Collateral</h4>
-                      </div>
-                      <div className="px-5 py-8 flex flex-col items-center gap-2 text-slate-400">
-                        <Package size={28} className="text-slate-300" />
-                        <p className="text-sm">No collateral items registered</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedDetail.loans?.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-blue-100 rounded-lg">
-                          <TrendingUp size={13} className="text-blue-600" />
-                        </div>
-                        <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">
-                          Loan Applications ({selectedDetail.loans.length})
-                        </h4>
-                      </div>
-                      {selectedDetail.loans.map((loan) => {
-                        const liveStatus = loanStatuses[loan.loan_id] ?? loan.status;
-                        return (
-                          <div key={loan.loan_id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                            <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-200">
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-bold text-slate-800">Loan #{loan.loan_id}</span>
-                                <StatusBadge status={liveStatus} />
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                                <Clock size={12} />
-                                {loan.duration_weeks} weeks
-                              </div>
-                            </div>
-                            <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-5">
-                              <InfoField label="Loan Amount"     value={fmt(loan.loan_amount)} accent="text-blue-600" />
-                              <InfoField label="Total Repayment" value={fmt(loan.total_repayment)} />
-                              <InfoField label="Interest Rate"   value={fmtPct(loan.interest_rate)} />
-                              <InfoField label="Duration"        value={`${loan.duration_weeks} weeks`} />
-                            </div>
-                            <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
-                              <p className="text-xs text-slate-400 max-w-sm">
-                                {liveStatus === 'pending'
-                                  ? 'Review and take action. The applicant will receive an email notification.'
-                                  : `This loan has been ${liveStatus}.${
-                                      liveStatus === 'approved' || liveStatus === 'rejected'
-                                        ? ' The applicant has been notified via email.'
-                                        : ''
-                                    }`
-                                }
-                              </p>
-                              <LoanActions
-                                loanId={loan.loan_id}
-                                currentStatus={liveStatus}
-                                onStatusChange={handleLoanStatusChange}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
+              {selectedDetail.collateral?.length > 0 ? (
+                <CollateralSection collateral={selectedDetail.collateral} />
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 bg-white rounded-xl">
-                  <AlertCircle size={32} className="text-slate-300" />
-                  <p className="text-slate-400 text-sm">No details available for this applicant.</p>
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+                    <div className="p-1.5 bg-blue-100 rounded-lg">
+                      <Shield size={13} className="text-blue-600" />
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Collateral</h4>
+                  </div>
+                  <div className="px-5 py-8 flex flex-col items-center gap-2 text-slate-400">
+                    <Package size={28} className="text-slate-300" />
+                    <p className="text-sm">No collateral items registered</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedDetail.loans?.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-blue-100 rounded-lg">
+                      <TrendingUp size={13} className="text-blue-600" />
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">
+                      Loan Applications ({selectedDetail.loans.length})
+                    </h4>
+                  </div>
+                  {selectedDetail.loans.map((loan) => {
+                    const liveStatus = loanStatuses[loan.loan_id] ?? loan.status;
+                    return (
+                      <div key={loan.loan_id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold text-slate-800">Loan #{loan.loan_id}</span>
+                            <StatusBadge status={liveStatus} />
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                            <Clock size={12} />
+                            {loan.duration_weeks} weeks
+                          </div>
+                        </div>
+                        <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-5">
+                          <InfoField label="Loan Amount"     value={fmt(loan.loan_amount)} accent="text-blue-600" />
+                          <InfoField label="Total Repayment" value={fmt(loan.total_repayment)} />
+                          <InfoField label="Interest Rate"   value={fmtPct(loan.interest_rate)} />
+                          <InfoField label="Duration"        value={`${loan.duration_weeks} weeks`} />
+                        </div>
+                        <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+                          <p className="text-xs text-slate-400 max-w-sm">
+                            {liveStatus === 'pending'
+                              ? 'Review and take action. The applicant will receive an email notification.'
+                              : `This loan has been ${liveStatus}.${
+                                  liveStatus === 'approved' || liveStatus === 'rejected'
+                                    ? ' The applicant has been notified via email.'
+                                    : ''
+                                }`
+                              }
+                          </p>
+                          <LoanActions
+                            loanId={loan.loan_id}
+                            currentStatus={liveStatus}
+                            onStatusChange={handleLoanStatusChange}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
