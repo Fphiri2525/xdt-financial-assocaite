@@ -299,12 +299,7 @@ export default function AdminLogin() {
             </div>
 
             <div className="mb-4 p-2 bg-blue-50 rounded-lg border border-blue-100">
-              <p className="text-xs text-blue-700 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                You will be registered as a Client
-              </p>
+            
             </div>
 
             <button type="submit" disabled={isLoading}
