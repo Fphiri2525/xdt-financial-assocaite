@@ -9,9 +9,6 @@ import {
   Landmark, Box, DollarSign
 } from 'lucide-react';
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
 interface UserInfo {
   user_id: number;
   username: string;
@@ -105,21 +102,14 @@ interface TableRow {
   collateral_value: number;
 }
 
-// ─────────────────────────────────────────────
-// ✅ FIX 1: Single source of truth for API base URL
-// All fetch calls now use this — no more hardcoded localhost strings
-// ─────────────────────────────────────────────
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+// ✅ UPDATED: Cloudinary URLs are always full https:// — just return as-is
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
-  return `${API_BASE_URL.replace('/api', '')}/uploads/${imagePath.replace(/^\/+/, '')}`;
+  return imagePath;
 };
 
-// ─────────────────────────────────────────────
-// Collateral helpers
-// ─────────────────────────────────────────────
 type CollateralStyle = {
   badge: string;
   dot: string;
@@ -161,9 +151,6 @@ const getCollateralStyle = (type: string): CollateralStyle => {
   };
 };
 
-// ─────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────
 function InlineImage({ imagePath, label }: { imagePath: string; label: string }) {
   const [errored, setErrored] = useState(false);
   return (
@@ -239,9 +226,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// ✅ FIX 2: LoanActions now uses API_BASE_URL (no more hardcoded localhost)
-// ─────────────────────────────────────────────
 function LoanActions({
   loanId,
   currentStatus,
@@ -263,42 +247,26 @@ function LoanActions({
 
   const handleAction = async (action: 'approved' | 'rejected') => {
     setBusy(action);
-
     try {
-      // ✅ FIXED: uses API_BASE_URL env variable — same as all other working API calls
       const url = `${API_BASE_URL}/loans/${loanId}/status`;
-
       console.log('📤 PATCH', url, '→', action);
-
       const res = await fetch(url, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: action }),
       });
-
       const data = await res.json();
       console.log('📥 Response:', data);
-
       if (res.ok) {
-        const emailNote = data.email_notification_sent
-          ? ' Email sent to applicant.'
-          : '';
+        const emailNote = data.email_notification_sent ? ' Email sent to applicant.' : '';
         showToast(`Loan ${action} successfully.${emailNote}`, 'success');
         onStatusChange(loanId, action);
       } else {
-        showToast(
-          `Failed to ${action} loan: ${data.message || 'Unknown error'}`,
-          'error'
-        );
+        showToast(`Failed to ${action} loan: ${data.message || 'Unknown error'}`, 'error');
       }
     } catch (err) {
       console.error('❌ Fetch error:', err);
-      showToast(
-        'Network error — make sure the backend server is running.',
-        'error'
-      );
+      showToast('Network error — make sure the backend server is running.', 'error');
     } finally {
       setBusy(null);
     }
@@ -324,14 +292,12 @@ function LoanActions({
 
   return (
     <>
-      {/* Toast notification */}
       {toastMessage && (
-        <div
-          className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-xl text-sm font-medium max-w-sm
-            ${toastType === 'success'
-              ? 'bg-emerald-700 text-white border border-emerald-600'
-              : 'bg-red-700 text-white border border-red-600'
-            }`}
+        <div className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-xl text-sm font-medium max-w-sm
+          ${toastType === 'success'
+            ? 'bg-emerald-700 text-white border border-emerald-600'
+            : 'bg-red-700 text-white border border-red-600'
+          }`}
         >
           <div className="flex items-start gap-2">
             {toastType === 'success'
@@ -342,9 +308,7 @@ function LoanActions({
           </div>
         </div>
       )}
-
       <div className="flex items-center gap-2">
-        {/* Approve */}
         <button
           onClick={() => handleAction('approved')}
           disabled={!!busy}
@@ -353,14 +317,9 @@ function LoanActions({
             text-white text-sm font-semibold rounded-xl transition-all duration-200
             cursor-pointer shadow-sm hover:shadow-md"
         >
-          {busy === 'approved'
-            ? <Loader2 size={14} className="animate-spin" />
-            : <CheckCircle size={14} />
-          }
+          {busy === 'approved' ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
           Approve
         </button>
-
-        {/* Reject */}
         <button
           onClick={() => handleAction('rejected')}
           disabled={!!busy}
@@ -369,10 +328,7 @@ function LoanActions({
             text-white text-sm font-semibold rounded-xl transition-all duration-200
             cursor-pointer shadow-sm hover:shadow-md"
         >
-          {busy === 'rejected'
-            ? <Loader2 size={14} className="animate-spin" />
-            : <XCircle size={14} />
-          }
+          {busy === 'rejected' ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
           Reject
         </button>
       </div>
@@ -403,12 +359,8 @@ function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType;
   );
 }
 
-// ─────────────────────────────────────────────
-// Collateral Section Component
-// ─────────────────────────────────────────────
 function CollateralSection({ collateral }: { collateral: Collateral[] }) {
   const totalValue = collateral.reduce((s, c) => s + (c.estimated_value || 0), 0);
-
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
       <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50 border-b border-slate-200">
@@ -422,17 +374,13 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
           <DollarSign size={11} className="text-emerald-600" />
-          <span className="text-xs font-bold text-emerald-700">
-            K{totalValue.toLocaleString()} total
-          </span>
+          <span className="text-xs font-bold text-emerald-700">K{totalValue.toLocaleString()} total</span>
         </div>
       </div>
-
       <div className="p-5 space-y-4">
         {collateral.map((coll, index) => {
           const style = getCollateralStyle(coll.collateral_type);
           const CollIcon = style.icon;
-
           return (
             <div key={coll.collateral_id} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
               <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200">
@@ -453,7 +401,6 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
                   <p className="text-sm font-bold text-emerald-600">K{(coll.estimated_value || 0).toLocaleString()}</p>
                 </div>
               </div>
-
               <div className="px-4 py-3 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -467,7 +414,6 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
                     </span>
                   </div>
                 </div>
-
                 {coll.images?.length > 0 ? (
                   <div>
                     <div className="flex items-center gap-2 mb-2.5">
@@ -496,7 +442,6 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
             </div>
           );
         })}
-
         <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
           <div className="flex items-center gap-2">
             <DollarSign size={14} className="text-emerald-600" />
@@ -509,9 +454,6 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────
 export default function RecentApplications() {
   const [rows, setRows] = useState<TableRow[]>([]);
   const [allDetails, setAllDetails] = useState<UserDetails[]>([]);
@@ -531,17 +473,11 @@ export default function RecentApplications() {
       const res = await fetch(`${API_BASE_URL}/profile/all-details`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: ApiResponse = await res.json();
-
       setAllDetails(data.data ?? []);
-
       const tableRows: TableRow[] = [];
       (data.data ?? []).forEach((ud) => {
         if (!ud?.user || !Array.isArray(ud.loans)) return;
-
-        const totalCollateralValue = (ud.collateral ?? []).reduce(
-          (s, c) => s + (c.estimated_value || 0), 0
-        );
-
+        const totalCollateralValue = (ud.collateral ?? []).reduce((s, c) => s + (c.estimated_value || 0), 0);
         ud.loans.forEach((loan) => {
           tableRows.push({
             loan_id:           loan.loan_id,
@@ -560,14 +496,11 @@ export default function RecentApplications() {
           });
         });
       });
-
       tableRows.sort((a, b) => b.loan_id - a.loan_id);
       setRows(tableRows.slice(0, 15));
-
       const statusMap: Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'> = {};
       tableRows.forEach((r) => { statusMap[r.loan_id] = r.status; });
       setLoanStatuses(statusMap);
-
     } catch (err) {
       setError('Failed to load applications. Please try again.');
       console.error(err);
@@ -587,16 +520,12 @@ export default function RecentApplications() {
 
   const handleLoanStatusChange = (loanId: number, newStatus: 'approved' | 'rejected') => {
     setLoanStatuses((prev) => ({ ...prev, [loanId]: newStatus }));
-    setRows((prev) =>
-      prev.map((r) => r.loan_id === loanId ? { ...r, status: newStatus } : r)
-    );
+    setRows((prev) => prev.map((r) => r.loan_id === loanId ? { ...r, status: newStatus } : r));
     setSelectedDetail((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        loans: prev.loans.map((l) =>
-          l.loan_id === loanId ? { ...l, status: newStatus } : l
-        ),
+        loans: prev.loans.map((l) => l.loan_id === loanId ? { ...l, status: newStatus } : l),
       };
     });
   };
@@ -604,9 +533,7 @@ export default function RecentApplications() {
   const fmt    = (v: number) => `K${(v ?? 0).toLocaleString()}`;
   const fmtPct = (r: number) => `${((r || 0) * 100).toFixed(0)}%`;
 
-  const pendingCount = rows.filter(
-    (r) => (loanStatuses[r.loan_id] ?? r.status) === 'pending'
-  ).length;
+  const pendingCount = rows.filter((r) => (loanStatuses[r.loan_id] ?? r.status) === 'pending').length;
 
   if (loading) {
     return (
@@ -636,10 +563,7 @@ export default function RecentApplications() {
 
   return (
     <>
-      {/* ── Table Card ── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
-        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 rounded-xl">
@@ -656,11 +580,7 @@ export default function RecentApplications() {
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={fetchData}
-              className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
-              title="Refresh"
-            >
+            <button onClick={fetchData} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer" title="Refresh">
               <RefreshCw size={15} />
             </button>
             <button className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer">
@@ -672,7 +592,6 @@ export default function RecentApplications() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto bg-white">
           {rows.length === 0 ? (
             <div className="text-center py-16 bg-white">
@@ -684,10 +603,7 @@ export default function RecentApplications() {
               <thead className="bg-slate-50">
                 <tr className="border-y border-slate-200">
                   {['Applicant', 'National ID', 'Email', 'Loan Amount', 'Status', 'Actions'].map((h) => (
-                    <th
-                      key={h}
-                      className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50"
-                    >
+                    <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">
                       {h}
                     </th>
                   ))}
@@ -710,9 +626,7 @@ export default function RecentApplications() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 bg-white">
-                        <span className="text-sm font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
-                          {row.national_id}
-                        </span>
+                        <span className="text-sm font-mono text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">{row.national_id}</span>
                       </td>
                       <td className="px-5 py-3.5 bg-white">
                         <p className="text-sm text-slate-600">{row.email}</p>
@@ -745,12 +659,9 @@ export default function RecentApplications() {
         </div>
       </div>
 
-      {/* ── Modal ── */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-200">
-
-            {/* Modal Header */}
             <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between rounded-t-2xl shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 rounded-xl">
@@ -773,7 +684,6 @@ export default function RecentApplications() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="overflow-y-auto flex-1 p-6 space-y-5 bg-slate-50">
               {modalLoading ? (
                 <div className="flex justify-center py-20 bg-white rounded-xl">
@@ -781,7 +691,6 @@ export default function RecentApplications() {
                 </div>
               ) : selectedDetail ? (
                 <>
-                  {/* ── Personal Info ── */}
                   <SectionCard icon={User} title="Personal Information">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                       <InfoField label="Full Name"     value={selectedDetail.user.username} />
@@ -799,7 +708,6 @@ export default function RecentApplications() {
                     </div>
                   </SectionCard>
 
-                  {/* ── Employment ── */}
                   {selectedDetail.employment && (
                     <SectionCard icon={Briefcase} title="Employment Details">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
@@ -816,7 +724,6 @@ export default function RecentApplications() {
                     </SectionCard>
                   )}
 
-                  {/* ── Next of Kin ── */}
                   {selectedDetail.next_of_kin && (
                     <SectionCard icon={Phone} title="Next of Kin">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
@@ -827,7 +734,6 @@ export default function RecentApplications() {
                     </SectionCard>
                   )}
 
-                  {/* ── ID Documents ── */}
                   {selectedDetail.id_images?.length > 0 && (
                     <SectionCard icon={ImageIcon} title="ID Documents">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -838,7 +744,6 @@ export default function RecentApplications() {
                     </SectionCard>
                   )}
 
-                  {/* ── Collateral ── */}
                   {selectedDetail.collateral?.length > 0 ? (
                     <CollateralSection collateral={selectedDetail.collateral} />
                   ) : (
@@ -856,7 +761,6 @@ export default function RecentApplications() {
                     </div>
                   )}
 
-                  {/* ── Loans ── */}
                   {selectedDetail.loans?.length > 0 && (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
@@ -867,7 +771,6 @@ export default function RecentApplications() {
                           Loan Applications ({selectedDetail.loans.length})
                         </h4>
                       </div>
-
                       {selectedDetail.loans.map((loan) => {
                         const liveStatus = loanStatuses[loan.loan_id] ?? loan.status;
                         return (
@@ -882,14 +785,12 @@ export default function RecentApplications() {
                                 {loan.duration_weeks} weeks
                               </div>
                             </div>
-
                             <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-5">
                               <InfoField label="Loan Amount"     value={fmt(loan.loan_amount)} accent="text-blue-600" />
                               <InfoField label="Total Repayment" value={fmt(loan.total_repayment)} />
                               <InfoField label="Interest Rate"   value={fmtPct(loan.interest_rate)} />
                               <InfoField label="Duration"        value={`${loan.duration_weeks} weeks`} />
                             </div>
-
                             <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
                               <p className="text-xs text-slate-400 max-w-sm">
                                 {liveStatus === 'pending'
@@ -921,7 +822,6 @@ export default function RecentApplications() {
               )}
             </div>
 
-            {/* Modal Footer */}
             <div className="px-6 py-4 border-t border-slate-200 bg-white rounded-b-2xl flex justify-end shrink-0">
               <button
                 onClick={() => { setIsModalOpen(false); setSelectedDetail(null); }}

@@ -102,6 +102,12 @@ export default function AdminLogin() {
       return;
     }
 
+    if (/\d/.test(credentials.username)) {
+      setNotification({ type: 'error', message: 'Username should not contain numbers. Please enter a personal name.' });
+      setIsLoading(false);
+      return;
+    }
+
     if (credentials.password.length < 6) {
       setNotification({ type: 'error', message: 'Password must be at least 6 characters long.' });
       setIsLoading(false);
