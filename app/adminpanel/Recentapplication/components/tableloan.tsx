@@ -8,7 +8,7 @@ import {
   ChevronRight, AlertCircle, Package, Car, Home,
   Landmark, Box, DollarSign
 } from 'lucide-react';
-import FilterHeader from "./search"; // Adjust the import path as needed
+import FilterHeader from "./search";
 
 // ─────────────────────────────────────────────
 // Types
@@ -115,9 +115,9 @@ interface DateRange {
 }
 
 // ─────────────────────────────────────────────
-// Constants
+// Constants — matches the working component pattern
 // ─────────────────────────────────────────────
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://loan-backend-production-558e.up.railway.app/api';
 
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
@@ -136,43 +136,29 @@ const filterRows = (
   dateRange: DateRange
 ): TableRow[] => {
   return rows.filter((row) => {
-    // Search filter (name, phone, email, national ID)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         row.applicant_name.toLowerCase().includes(searchLower) ||
         (row.phone && row.phone.toLowerCase().includes(searchLower)) ||
         row.email.toLowerCase().includes(searchLower) ||
         row.national_id.toLowerCase().includes(searchLower);
       if (!matchesSearch) return false;
     }
-
-    // Status filter
     if (statusFilter) {
-      const statusMatch = row.status.toLowerCase() === statusFilter.toLowerCase();
-      if (!statusMatch) return false;
+      if (row.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
     }
-
-    // Loan type filter
     if (loanTypeFilter && row.loan_type) {
-      const typeMatch = row.loan_type.toLowerCase() === loanTypeFilter.toLowerCase();
-      if (!typeMatch) return false;
+      if (row.loan_type.toLowerCase() !== loanTypeFilter.toLowerCase()) return false;
     }
-
-    // Date range filter
     if (dateRange.start && row.application_date) {
-      const appDate = new Date(row.application_date);
-      const startDate = new Date(dateRange.start);
-      if (appDate < startDate) return false;
+      if (new Date(row.application_date) < new Date(dateRange.start)) return false;
     }
-    
     if (dateRange.end && row.application_date) {
-      const appDate = new Date(row.application_date);
       const endDate = new Date(dateRange.end);
-      endDate.setHours(23, 59, 59); // Include the entire end date
-      if (appDate > endDate) return false;
+      endDate.setHours(23, 59, 59);
+      if (new Date(row.application_date) > endDate) return false;
     }
-
     return true;
   });
 };
@@ -190,35 +176,15 @@ type CollateralStyle = {
 const getCollateralStyle = (type: string): CollateralStyle => {
   const t = (type ?? '').toLowerCase();
   if (t.includes('motor') || t.includes('vehicle') || t.includes('car') || t.includes('truck')) {
-    return {
-      badge: 'bg-blue-50 text-blue-700 border border-blue-200',
-      dot: 'bg-blue-500',
-      icon: Car,
-      iconColor: 'text-blue-500',
-    };
+    return { badge: 'bg-blue-50 text-blue-700 border border-blue-200', dot: 'bg-blue-500', icon: Car, iconColor: 'text-blue-500' };
   }
   if (t.includes('real estate') || t.includes('house') || t.includes('property') || t.includes('home')) {
-    return {
-      badge: 'bg-amber-50 text-amber-700 border border-amber-200',
-      dot: 'bg-amber-500',
-      icon: Home,
-      iconColor: 'text-amber-500',
-    };
+    return { badge: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500', icon: Home, iconColor: 'text-amber-500' };
   }
   if (t.includes('land') || t.includes('plot') || t.includes('farm')) {
-    return {
-      badge: 'bg-green-50 text-green-700 border border-green-200',
-      dot: 'bg-green-500',
-      icon: Landmark,
-      iconColor: 'text-green-500',
-    };
+    return { badge: 'bg-green-50 text-green-700 border border-green-200', dot: 'bg-green-500', icon: Landmark, iconColor: 'text-green-500' };
   }
-  return {
-    badge: 'bg-slate-100 text-slate-700 border border-slate-200',
-    dot: 'bg-slate-400',
-    icon: Box,
-    iconColor: 'text-slate-400',
-  };
+  return { badge: 'bg-slate-100 text-slate-700 border border-slate-200', dot: 'bg-slate-400', icon: Box, iconColor: 'text-slate-400' };
 };
 
 // ─────────────────────────────────────────────
@@ -322,14 +288,12 @@ function LoanActions({
     setBusy(action);
     try {
       const url = `${API_BASE_URL}/loans/${loanId}/status`;
-      console.log('📤 PATCH', url, '→', action);
       const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: action }),
       });
       const data = await res.json();
-      console.log('📥 Response:', data);
       if (res.ok) {
         const emailNote = data.email_notification_sent ? ' Email sent to applicant.' : '';
         showToast(`Loan ${action} successfully.${emailNote}`, 'success');
@@ -338,7 +302,6 @@ function LoanActions({
         showToast(`Failed to ${action} loan: ${data.message || 'Unknown error'}`, 'error');
       }
     } catch (err) {
-      console.error('❌ Fetch error:', err);
       showToast('Network error — make sure the backend server is running.', 'error');
     } finally {
       setBusy(null);
@@ -367,16 +330,11 @@ function LoanActions({
     <>
       {toastMessage && (
         <div className={`fixed bottom-4 right-4 z-[9999] px-4 py-3 rounded-xl shadow-xl text-sm font-medium max-w-sm
-          ${toastType === 'success'
-            ? 'bg-emerald-700 text-white border border-emerald-600'
-            : 'bg-red-700 text-white border border-red-600'
-          }`}
-        >
+          ${toastType === 'success' ? 'bg-emerald-700 text-white border border-emerald-600' : 'bg-red-700 text-white border border-red-600'}`}>
           <div className="flex items-start gap-2">
             {toastType === 'success'
               ? <CheckCircle size={16} className="mt-0.5 shrink-0" />
-              : <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            }
+              : <AlertCircle size={16} className="mt-0.5 shrink-0" />}
             {toastMessage}
           </div>
         </div>
@@ -386,9 +344,8 @@ function LoanActions({
           onClick={() => handleAction('approved')}
           disabled={!!busy}
           className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
-            text-white text-sm font-semibold rounded-xl transition-all duration-200
-            cursor-pointer shadow-sm hover:shadow-md"
+            disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl
+            transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
         >
           {busy === 'approved' ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
           Approve
@@ -397,9 +354,8 @@ function LoanActions({
           onClick={() => handleAction('rejected')}
           disabled={!!busy}
           className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
-            text-white text-sm font-semibold rounded-xl transition-all duration-200
-            cursor-pointer shadow-sm hover:shadow-md"
+            disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl
+            transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
         >
           {busy === 'rejected' ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
           Reject
@@ -497,11 +453,7 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
                     </div>
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                       {coll.images.map((img, imgIndex) => (
-                        <CollateralImageThumb
-                          key={img.image_id}
-                          imagePath={img.image_path}
-                          label={`Photo ${imgIndex + 1}`}
-                        />
+                        <CollateralImageThumb key={img.image_id} imagePath={img.image_path} label={`Photo ${imgIndex + 1}`} />
                       ))}
                     </div>
                   </div>
@@ -539,7 +491,7 @@ export default function RecentApplications() {
   const [selectedDetail, setSelectedDetail] = useState<UserDetails | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loanStatuses, setLoanStatuses] = useState<Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'>>({});
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -548,37 +500,30 @@ export default function RecentApplications() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Apply filters whenever filter criteria or data changes
   useEffect(() => {
-    const filtered = filterRows(allRows, searchTerm, statusFilter, loanTypeFilter, dateRange);
-    setFilteredRows(filtered);
+    setFilteredRows(filterRows(allRows, searchTerm, statusFilter, loanTypeFilter, dateRange));
   }, [allRows, searchTerm, statusFilter, loanTypeFilter, dateRange]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
+
       const res = await fetch(`${API_BASE_URL}/profile/all-details`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: ApiResponse = await res.json();
-      
-      // Store all details for modal
+
       setAllDetails(data.data ?? []);
-      
-      // Build table rows
+
       const tableRows: TableRow[] = [];
       (data.data ?? []).forEach((ud) => {
         if (!ud?.user || !Array.isArray(ud.loans)) return;
         const totalCollateralValue = (ud.collateral ?? []).reduce((s, c) => s + (c.estimated_value || 0), 0);
         ud.loans.forEach((loan) => {
-          // Determine loan type based on collateral or employment
           let loanType = 'Personal';
-          if (ud.collateral && ud.collateral.length > 0) {
-            loanType = 'Business';
-          } else if (ud.employment && ud.employment.monthly_income > 5000) {
-            loanType = 'Business';
-          }
-          
+          if (ud.collateral && ud.collateral.length > 0) loanType = 'Business';
+          else if (ud.employment && ud.employment.monthly_income > 5000) loanType = 'Business';
+
           tableRows.push({
             loan_id:           loan.loan_id,
             user_id:           ud.user.user_id,
@@ -594,17 +539,19 @@ export default function RecentApplications() {
             employment_status: ud.employment?.employment_status || 'N/A',
             collateral_count:  (ud.collateral ?? []).length,
             collateral_value:  totalCollateralValue,
-            application_date:  new Date().toISOString().split('T')[0], // You might want to get this from your API
-            loan_type: loanType,
+            application_date:  new Date().toISOString().split('T')[0],
+            loan_type:         loanType,
           });
         });
       });
+
       tableRows.sort((a, b) => b.loan_id - a.loan_id);
       setAllRows(tableRows);
-      
+
       const statusMap: Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'> = {};
       tableRows.forEach((r) => { statusMap[r.loan_id] = r.status; });
       setLoanStatuses(statusMap);
+
     } catch (err) {
       setError('Failed to load applications. Please try again.');
       console.error(err);
@@ -624,16 +571,12 @@ export default function RecentApplications() {
     setAllRows((prev) => prev.map((r) => r.loan_id === loanId ? { ...r, status: newStatus } : r));
     setSelectedDetail((prev) => {
       if (!prev) return prev;
-      return {
-        ...prev,
-        loans: prev.loans.map((l) => l.loan_id === loanId ? { ...l, status: newStatus } : l),
-      };
+      return { ...prev, loans: prev.loans.map((l) => l.loan_id === loanId ? { ...l, status: newStatus } : l) };
     });
   };
 
   const handleRefresh = () => {
     fetchData();
-    // Reset filters
     setSearchTerm('');
     setStatusFilter('');
     setLoanTypeFilter('');
@@ -642,7 +585,6 @@ export default function RecentApplications() {
 
   const fmt = (v: number) => `K${(v ?? 0).toLocaleString()}`;
   const fmtPct = (r: number) => `${((r || 0) * 100).toFixed(0)}%`;
-
   const pendingCount = filteredRows.filter((r) => (loanStatuses[r.loan_id] ?? r.status) === 'pending').length;
 
   if (loading) {
@@ -661,10 +603,7 @@ export default function RecentApplications() {
           <AlertCircle size={24} className="text-red-500" />
         </div>
         <p className="text-slate-700 font-medium">{error}</p>
-        <button
-          onClick={fetchData}
-          className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
-        >
+        <button onClick={fetchData} className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
           Try Again
         </button>
       </div>
@@ -674,7 +613,6 @@ export default function RecentApplications() {
   return (
     <>
       <div className="space-y-4">
-        {/* Filter Header */}
         <FilterHeader
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -687,7 +625,6 @@ export default function RecentApplications() {
           onRefresh={handleRefresh}
         />
 
-        {/* Applications Table */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
             <div className="flex items-center gap-3">
@@ -721,10 +658,7 @@ export default function RecentApplications() {
               <div className="text-center py-16 bg-white">
                 <FileText size={40} className="mx-auto text-slate-200 mb-3" />
                 <p className="text-slate-400 text-sm">No applications match your filters</p>
-                <button
-                  onClick={handleRefresh}
-                  className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
+                <button onClick={handleRefresh} className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
                   Clear filters
                 </button>
               </div>
@@ -790,7 +724,7 @@ export default function RecentApplications() {
         </div>
       </div>
 
-      {/* Modal - Same as before */}
+      {/* Detail Modal */}
       {isModalOpen && selectedDetail && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-200">
@@ -801,9 +735,7 @@ export default function RecentApplications() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Application Details</h3>
-                  <p className="text-xs text-slate-500">
-                    {selectedDetail.user.username} · {selectedDetail.user.email}
-                  </p>
+                  <p className="text-xs text-slate-500">{selectedDetail.user.username} · {selectedDetail.user.email}</p>
                 </div>
               </div>
               <button
@@ -819,11 +751,7 @@ export default function RecentApplications() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                   <InfoField label="Full Name"     value={selectedDetail.user.username} />
                   <InfoField label="Email"         value={selectedDetail.user.email} />
-                  <InfoField label="National ID"   value={
-                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">
-                      {selectedDetail.user.national_id || '—'}
-                    </span>
-                  } />
+                  <InfoField label="National ID"   value={<span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">{selectedDetail.user.national_id || '—'}</span>} />
                   <InfoField label="Phone"         value={selectedDetail.user.phone || '—'} />
                   <InfoField label="Date of Birth" value={selectedDetail.user.date_of_birth || '—'} />
                   <InfoField label="City"          value={selectedDetail.user.city || '—'} />
@@ -873,9 +801,7 @@ export default function RecentApplications() {
               ) : (
                 <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-50 border-b border-slate-200">
-                    <div className="p-1.5 bg-blue-100 rounded-lg">
-                      <Shield size={13} className="text-blue-600" />
-                    </div>
+                    <div className="p-1.5 bg-blue-100 rounded-lg"><Shield size={13} className="text-blue-600" /></div>
                     <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Collateral</h4>
                   </div>
                   <div className="px-5 py-8 flex flex-col items-center gap-2 text-slate-400">
@@ -888,9 +814,7 @@ export default function RecentApplications() {
               {selectedDetail.loans?.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-blue-100 rounded-lg">
-                      <TrendingUp size={13} className="text-blue-600" />
-                    </div>
+                    <div className="p-1.5 bg-blue-100 rounded-lg"><TrendingUp size={13} className="text-blue-600" /></div>
                     <h4 className="text-xs font-bold text-slate-600 uppercase tracking-widest">
                       Loan Applications ({selectedDetail.loans.length})
                     </h4>
@@ -919,18 +843,10 @@ export default function RecentApplications() {
                           <p className="text-xs text-slate-400 max-w-sm">
                             {liveStatus === 'pending'
                               ? 'Review and take action. The applicant will receive an email notification.'
-                              : `This loan has been ${liveStatus}.${
-                                  liveStatus === 'approved' || liveStatus === 'rejected'
-                                    ? ' The applicant has been notified via email.'
-                                    : ''
-                                }`
-                              }
+                              : `This loan has been ${liveStatus}.${liveStatus === 'approved' || liveStatus === 'rejected' ? ' The applicant has been notified via email.' : ''}`
+                            }
                           </p>
-                          <LoanActions
-                            loanId={loan.loan_id}
-                            currentStatus={liveStatus}
-                            onStatusChange={handleLoanStatusChange}
-                          />
+                          <LoanActions loanId={loan.loan_id} currentStatus={liveStatus} onStatusChange={handleLoanStatusChange} />
                         </div>
                       </div>
                     );
