@@ -42,19 +42,19 @@ export default function ContactPage() {
     {
       icon: PhoneIcon,
       title: "Call or WhatsApp",
-      details: ["+265 998 843 651", "+265 983 170 685"],
+      details: ["0992252621","0883946785"],
       description: "Available 8AM - 5PM, Monday to Saturday"
     },
     {
       icon: EnvelopeIcon,
       title: "Email Us",
-      details: ["info@xtdata.mw", "support@xtdata.mw"],
+      details: ["xdtgloballimited@gmail.com"],
       description: "We respond within 24 hours"
     },
     {
       icon: MapPinIcon,
       title: "Visit Our Office",
-      details: ["Area 18, Lilongwe", "Opposite Gateway Mall"],
+      details: ["mchesi, karonga", "deport load opposite mayoka clinic"],
       description: "Malawi"
     },
     {

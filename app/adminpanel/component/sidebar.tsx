@@ -89,15 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       accent: 'border-teal-500',
       dot: 'bg-teal-500',
     },
-    {
-      name: 'Settings',
-      href: '/adminpanel/settings',
-      icon: Settings,
-      color: 'text-gray-500',
-      bgColor: 'bg-gray-50',
-      accent: 'border-gray-500',
-      dot: 'bg-gray-500',
-    },
+
   ];
 
   const isActiveLink = (href: string) => pathname === href;

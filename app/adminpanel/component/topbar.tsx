@@ -221,7 +221,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   </div>
                   
                   <a
-                    href="/client/profile"
+                    href="adminpanel/profile"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <User size={16} className="text-gray-400" />

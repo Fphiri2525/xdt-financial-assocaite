@@ -1,6 +1,6 @@
 // app/components/LoanForm/components/steps/ReviewStep.tsx
-import React from 'react';
-import { ChevronLeft, DollarSign } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, DollarSign, CheckSquare, Square } from 'lucide-react';
 import { FormData } from './type';
 
 interface ReviewStepProps {
@@ -28,6 +28,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
   onBack,
   onSubmit
 }) => {
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const MAX_LOAN = 200000;
   const DURATION_OPTIONS = [1, 2, 3, 4];
 
@@ -171,6 +172,34 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
             )}
           </div>
         </div>
+
+        {/* Terms and Conditions Checkbox */}
+        <div className={`p-4 rounded-lg border-2 ${
+          agreedToTerms 
+            ? (darkMode ? 'border-green-800 bg-green-900/10' : 'border-green-200 bg-green-50') 
+            : (darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50')
+        } transition-all duration-200`}>
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative flex items-center mt-1">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={() => setAgreedToTerms(!agreedToTerms)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                agreedToTerms 
+                  ? 'bg-green-600 border-green-600' 
+                  : (darkMode ? 'border-gray-500 group-hover:border-gray-400' : 'border-gray-400 group-hover:border-gray-500')
+              }`}>
+                {agreedToTerms && <CheckSquare size={14} className="text-white" />}
+              </div>
+            </div>
+            <span className={`text-sm leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              I agree that I will provide you the collateral and you will keep the collateral until I will repay the loan and any loan exceed I accept the charges
+            </span>
+          </label>
+        </div>
       </div>
 
       <div className="mt-6 flex justify-between">
@@ -184,8 +213,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="bg-green-600 text-white px-8 py-2 rounded-lg hover:bg-green-700 transition font-semibold disabled:bg-green-400 flex items-center"
+          disabled={isSubmitting || !agreedToTerms}
+          className={`px-8 py-2 rounded-lg transition font-semibold flex items-center ${
+            isSubmitting || !agreedToTerms
+              ? 'bg-gray-400 cursor-not-allowed text-white'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
         >
           {isSubmitting ? (
             <>
@@ -196,7 +229,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
               Submitting...
             </>
           ) : (
-            'SUBMIT APPLICATION'
+            'APPLY FOR LOAN'
           )}
         </button>
       </div>
