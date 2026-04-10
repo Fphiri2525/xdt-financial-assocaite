@@ -26,9 +26,9 @@ interface ValidationErrors {
   streetAddress?: string;
 }
 
-// Validates Malawian phone numbers: +265 or 0 prefix, 9 digits after country code
-// Accepted formats: +265XXXXXXXXX, 0XXXXXXXXX, 265XXXXXXXXX
-const PHONE_REGEX = /^(\+?265|0)[789]\d{7}$/;
+// Validates Malawian phone numbers: +265/265/0 prefix, then 1/8/9, then 8 more digits
+// Accepted formats: +265991234567, 0991234567, 265991234567
+const PHONE_REGEX = /^(\+?265|0)[189]\d{8}$/;
 
 // Malawian National ID: 8 alphanumeric characters (adjust to your actual format)
 const NATIONAL_ID_REGEX = /^[A-Z0-9]{8,12}$/i;

@@ -24,8 +24,8 @@ interface ValidationErrors {
 // Required asterisk helper
 const Req = () => <span className="text-red-500 ml-0.5">*</span>;
 
-// Malawian phone: +265/265/0 prefix, then 7/8/9, then 7 more digits
-const PHONE_REGEX = /^(\+?265|0)[789]\d{7}$/;
+// Malawian phone: +265/265/0 prefix, then 1/8/9, then 8 more digits
+const PHONE_REGEX = /^(\+?265|0)[189]\d{8}$/;
 
 // ── validators ──────────────────────────────────────────────────────────────
 
