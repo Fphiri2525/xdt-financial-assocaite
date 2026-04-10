@@ -61,7 +61,7 @@ export const UserBanner: React.FC<UserBannerProps> = ({ darkMode, userEmail, use
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                Welcome back,{' '}
+                Welcome ,{' '}
                 <span className="text-blue-100">
                   {displayName || 'Valued Customer'}
                 </span>
