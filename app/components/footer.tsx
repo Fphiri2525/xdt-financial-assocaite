@@ -108,17 +108,17 @@ const Footer = () => {
               <div className="space-y-3 text-sm">
                 <p>
                   <span className="font-semibold text-[#D4AF37]">Phone:</span><br />
-                  +265 999 000 000<br />
-                  +265 888 000 000
+                  +265883946785<br />
+                  +265992252621 
                 </p>
                 <p>
                   <span className="font-semibold text-[#D4AF37]"> WhatsApp:</span><br />
-                  +265 999 000 000
+                  0992252621
                 </p>
                 <p>
                   <span className="font-semibold text-[#D4AF37]">Email:</span><br />
-                  info@arautomation.mw<br />
-                  support@arautomation.mw
+                  xdtgloballimited@gmail.com<br />
+                  
                 </p>
                 <p>
                   <span className="font-semibold text-[#D4AF37]"> Location:</span><br />
