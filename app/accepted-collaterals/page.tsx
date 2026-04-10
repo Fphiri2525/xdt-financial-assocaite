@@ -165,7 +165,7 @@ export default function LoanPage() {
           <div className="w-24 h-0.5 bg-white mx-auto mt-6 transition-all duration-700 delay-200 group-hover:w-48"></div>
           <div className="flex gap-4 justify-center mt-8">
             <Link 
-              href="#apply"
+              href="/admin/login"
               className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-all transform hover:scale-105 hover:-translate-y-1 shadow-lg"
             >
               Apply Now
@@ -394,7 +394,7 @@ export default function LoanPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              href="/apply"
+              href="/admin/login"
               className="px-8 py-4 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-all"
             >
               Apply Now

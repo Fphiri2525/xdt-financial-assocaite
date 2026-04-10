@@ -314,9 +314,9 @@ export default function AboutPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: MapPinIcon, title: "Office Location", content: ["Area 18, Lilongwe", "Opposite Gateway Mall", "Malawi"] },
-              { icon: PhoneIcon, title: "Phone", content: ["+265 888 123 456", "+265 999 123 456"] },
-              { icon: EnvelopeIcon, title: "Email", content: ["info@xdt.mw", "support@xdt.mw"] }
+              { icon: MapPinIcon, title: "Office Location", content: ["mchesi, kalonga", "Opposite mayiko gate clinic", "Malawi"] },
+              { icon: PhoneIcon, title: "Phone", content: ["0992252621", "0883946785"] },
+              { icon: EnvelopeIcon, title: "Email", content: ["xdtgloballimited@gmail.com"] }
             ].map((item, index) => (
               <div key={index} className="text-center p-6 rounded-xl bg-white shadow-sm group/card transform transition-all duration-700 hover:scale-110 hover:-translate-y-4 hover:shadow-xl">
                 <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm transition-all duration-700 group-hover/card:scale-125 group-hover/card:rotate-12 group-hover/card:shadow-md">

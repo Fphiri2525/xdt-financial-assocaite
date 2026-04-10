@@ -7,7 +7,7 @@ const Footer = () => {
   return (
     <footer className="w-full">
       {/* Main Footer */}
-      <div style={{ backgroundColor: '#0A1F44' }} className="text-[#E5E5E5] py-12">
+      <div style={{ backgroundColor: '#0B3C5D' }} className="text-[#E5E5E5] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* 4-Column Grid */}
@@ -16,7 +16,7 @@ const Footer = () => {
             {/* Column 1 - Business Information */}
             <div className="space-y-4">
               <h2 style={{ color: '#D4AF37' }} className="text-xl font-bold mb-4 border-b border-[#D4AF37] pb-2">
-                XTData
+                XDt associate
               </h2>
               <p className="text-sm leading-relaxed">
                 Fast, secure and trusted collateral-based loan services. We accept portable high-value items for quick financial assistance.
@@ -39,20 +39,20 @@ const Footer = () => {
               <div className="mb-4">
                 <p className="font-semibold text-[#D4AF37] mb-2">🏦 Bank Accounts:</p>
                 <ul className="text-sm space-y-1">
-                  <li>National Bank – Robert Mwase – 1008203098</li>
-                  <li>FDH Bank – Robert Mwase – 140000628157</li>
-                  <li>First Capital Bank – Robert Mwase – 0004503119692</li>
-                  <li>Standard Bank – Robert Mwase – 9100008634197</li>
+                  <li>National Bank Robert Mwase 1008203098</li>
+                  <li>FDH Bank  Robert Mwase 140000628157</li>
+                  <li>First Capital Bank  Robert Mwase 0004503119692</li>
+                  <li>Standard Bank Robert Mwase  9100008634197</li>
                 </ul>
               </div>
 
               {/* Mobile Money */}
               <div className="mb-4">
-                <p className="font-semibold text-[#D4AF37] mb-2">📱 Mobile Money:</p>
+                <p className="font-semibold text-[#D4AF37] mb-2"> Mobile Money:</p>
                 <ul className="text-sm space-y-1">
-                  <li>Airtel Money Agent Code – 885584</li>
-                  <li>Airtel Money Dealer – 0998843651 / 0983170685</li>
-                  <li>TNM Mpamba Agent Code – 140547 / 2001542</li>
+                  <li>Airtel Money Agent Code  885584</li>
+                  <li>Airtel Money Dealer  0998843651 / 0983170685</li>
+                  <li>TNM Mpamba Agent Code  140547 / 2001542</li>
                 </ul>
               </div>
 
@@ -95,7 +95,7 @@ const Footer = () => {
                 href="/accepted-collaterals" 
                 className="inline-block mt-2 text-[#D4AF37] hover:text-white transition-colors text-sm font-semibold"
               >
-                👉 View Full List →
+                 View Full List →
               </Link>
             </div>
 
@@ -107,33 +107,33 @@ const Footer = () => {
               
               <div className="space-y-3 text-sm">
                 <p>
-                  <span className="font-semibold text-[#D4AF37]">📞 Phone:</span><br />
+                  <span className="font-semibold text-[#D4AF37]">Phone:</span><br />
                   +265 999 000 000<br />
                   +265 888 000 000
                 </p>
                 <p>
-                  <span className="font-semibold text-[#D4AF37]">📱 WhatsApp:</span><br />
+                  <span className="font-semibold text-[#D4AF37]"> WhatsApp:</span><br />
                   +265 999 000 000
                 </p>
                 <p>
-                  <span className="font-semibold text-[#D4AF37]">✉️ Email:</span><br />
+                  <span className="font-semibold text-[#D4AF37]">Email:</span><br />
                   info@arautomation.mw<br />
                   support@arautomation.mw
                 </p>
                 <p>
-                  <span className="font-semibold text-[#D4AF37]">📍 Location:</span><br />
-                  Area 3, Lilongwe<br />
+                  <span className="font-semibold text-[#D4AF37]"> Location:</span><br />
+                  mchesi,karonga<br />
                   Malawi
                 </p>
               </div>
 
               {/* Apply for Loan Button */}
               <Link
-                href="/client/home"
+                href="/admin/login"
                 style={{ backgroundColor: '#D4AF37' }}
                 className="inline-block px-6 py-3 text-[#0A1F44] font-bold rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-105 text-center w-full sm:w-auto"
               >
-                👉 Apply for Loan
+                 Apply for Loan
               </Link>
             </div>
           </div>
@@ -155,7 +155,7 @@ const Footer = () => {
             
             {/* Copyright */}
             <div className="text-sm text-gray-400">
-              © {currentYear} XTData. All Rights Reserved.
+              © {currentYear} XDt. All Rights Reserved.
             </div>
 
             {/* Fraud Warning */}
