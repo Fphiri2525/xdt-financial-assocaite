@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  FileText, Filter, Download, Eye, X, Loader2,
+  FileText, Download, Eye, X, Loader2,
   Briefcase, User, Phone, ImageIcon, CheckCircle,
   XCircle, RefreshCw, Shield, TrendingUp, Clock,
   ChevronRight, AlertCircle, Package, Car, Home,
-  Landmark, Box, DollarSign
+  Landmark, Box, DollarSign, Trash2
 } from 'lucide-react';
 import FilterHeader from "./search";
 
@@ -115,7 +115,7 @@ interface DateRange {
 }
 
 // ─────────────────────────────────────────────
-// Constants — matches the working component pattern
+// Constants
 // ─────────────────────────────────────────────
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://loan-backend-production-558e.up.railway.app/api';
 
@@ -186,6 +186,123 @@ const getCollateralStyle = (type: string): CollateralStyle => {
   }
   return { badge: 'bg-slate-100 text-slate-700 border border-slate-200', dot: 'bg-slate-400', icon: Box, iconColor: 'text-slate-400' };
 };
+
+// ─────────────────────────────────────────────
+// Delete Confirmation Modal
+// ─────────────────────────────────────────────
+function DeleteConfirmModal({
+  loanId,
+  applicantName,
+  loanAmount,
+  loanStatus,
+  onConfirm,
+  onCancel,
+  isDeleting,
+}: {
+  loanId: number;
+  applicantName: string;
+  loanAmount: number;
+  loanStatus: string;
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  isDeleting: boolean;
+}) {
+  const [reason, setReason] = useState('Applicant failed to provide required collateral documents');
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+          <div className="p-2 bg-red-100 rounded-xl">
+            <Trash2 size={16} className="text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900">Delete Loan Application</h3>
+            <p className="text-xs text-slate-500">This action cannot be undone</p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Warning */}
+          <div className="flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl">
+            <AlertCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
+            <div className="text-sm text-red-700">
+              <p className="font-semibold">Are you sure you want to delete this loan?</p>
+              <p className="text-xs mt-1 text-red-600">The applicant will be notified via email about the deletion.</p>
+            </div>
+          </div>
+
+          {/* Loan Info */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Loan Reference</span>
+              <span className="font-bold text-slate-800 font-mono">XT-{loanId}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Applicant</span>
+              <span className="font-semibold text-slate-800">{applicantName}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Amount</span>
+              <span className="font-bold text-slate-800">K{loanAmount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Current Status</span>
+              <span className={`font-semibold capitalize ${
+                loanStatus === 'approved' ? 'text-emerald-600' :
+                loanStatus === 'pending' ? 'text-amber-600' : 'text-slate-600'
+              }`}>{loanStatus}</span>
+            </div>
+          </div>
+
+          {/* Reason */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">
+              Reason for Deletion
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-3 text-slate-700
+                focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400
+                resize-none bg-white placeholder-slate-400"
+              placeholder="Enter reason for deletion..."
+            />
+            <p className="text-[11px] text-slate-400 mt-1">This reason will be included in the email sent to the applicant.</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 bg-slate-50 rounded-b-2xl">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-5 py-2 text-sm font-semibold text-slate-600 bg-white hover:bg-slate-100
+              border border-slate-200 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason)}
+            disabled={isDeleting || !reason.trim()}
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white
+              bg-red-600 hover:bg-red-700 rounded-xl transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+          >
+            {isDeleting ? (
+              <><Loader2 size={14} className="animate-spin" /> Deleting...</>
+            ) : (
+              <><Trash2 size={14} /> Delete Loan</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────
 // Sub-components
@@ -287,8 +404,7 @@ function LoanActions({
   const handleAction = async (action: 'approved' | 'rejected') => {
     setBusy(action);
     try {
-      const url = `${API_BASE_URL}/loans/${loanId}/status`;
-      const res = await fetch(url, {
+      const res = await fetch(`${API_BASE_URL}/loans/${loanId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: action }),
@@ -301,7 +417,7 @@ function LoanActions({
       } else {
         showToast(`Failed to ${action} loan: ${data.message || 'Unknown error'}`, 'error');
       }
-    } catch (err) {
+    } catch {
       showToast('Network error — make sure the backend server is running.', 'error');
     } finally {
       setBusy(null);
@@ -480,6 +596,29 @@ function CollateralSection({ collateral }: { collateral: Collateral[] }) {
 }
 
 // ─────────────────────────────────────────────
+// Toast Component
+// ─────────────────────────────────────────────
+function Toast({ message, type, onDismiss }: { message: string; type: 'success' | 'error'; onDismiss: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  return (
+    <div className={`fixed bottom-6 right-6 z-[9999] px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium max-w-sm
+      flex items-start gap-3 border
+      ${type === 'success'
+        ? 'bg-emerald-700 text-white border-emerald-600'
+        : 'bg-red-700 text-white border-red-600'}`}>
+      {type === 'success'
+        ? <CheckCircle size={16} className="mt-0.5 shrink-0" />
+        : <AlertCircle size={16} className="mt-0.5 shrink-0" />}
+      <span>{message}</span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 export default function RecentApplications() {
@@ -491,6 +630,13 @@ export default function RecentApplications() {
   const [selectedDetail, setSelectedDetail] = useState<UserDetails | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loanStatuses, setLoanStatuses] = useState<Record<number, 'pending' | 'approved' | 'rejected' | 'active' | 'completed'>>({});
+
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<{ loanId: number; applicantName: string; loanAmount: number; loanStatus: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toast
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -575,6 +721,46 @@ export default function RecentApplications() {
     });
   };
 
+  // ── Delete handlers ──
+  const handleDeleteClick = (loanId: number, applicantName: string, loanAmount: number, loanStatus: string) => {
+    setDeleteTarget({ loanId, applicantName, loanAmount, loanStatus });
+  };
+
+  const handleDeleteConfirm = async (reason: string) => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/loans/${deleteTarget.loanId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, deleted_by: 'admin' }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        // Remove loan from all state
+        setAllRows((prev) => prev.filter((r) => r.loan_id !== deleteTarget.loanId));
+        setSelectedDetail((prev) => {
+          if (!prev) return prev;
+          const updatedLoans = prev.loans.filter((l) => l.loan_id !== deleteTarget.loanId);
+          if (updatedLoans.length === 0) {
+            setIsModalOpen(false);
+            return null;
+          }
+          return { ...prev, loans: updatedLoans };
+        });
+        setToast({ message: `Loan XT-${deleteTarget.loanId} deleted successfully. Applicant notified via email.`, type: 'success' });
+      } else {
+        setToast({ message: data.message || 'Failed to delete loan.', type: 'error' });
+      }
+    } catch {
+      setToast({ message: 'Network error — could not delete loan.', type: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
   const handleRefresh = () => {
     fetchData();
     setSearchTerm('');
@@ -612,6 +798,22 @@ export default function RecentApplications() {
 
   return (
     <>
+      {/* Global Toast */}
+      {toast && <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />}
+
+      {/* Delete Confirm Modal */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          loanId={deleteTarget.loanId}
+          applicantName={deleteTarget.applicantName}
+          loanAmount={deleteTarget.loanAmount}
+          loanStatus={deleteTarget.loanStatus}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+          isDeleting={isDeleting}
+        />
+      )}
+
       <div className="space-y-4">
         <FilterHeader
           searchTerm={searchTerm}
@@ -703,16 +905,28 @@ export default function RecentApplications() {
                           <StatusBadge status={liveStatus} />
                         </td>
                         <td className="px-5 py-3.5 bg-white">
-                          <button
-                            onClick={() => handleView(row.user_id)}
-                            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-white font-semibold
-                              bg-white hover:bg-blue-600 border border-blue-200 hover:border-blue-600
-                              px-3.5 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
-                          >
-                            <Eye size={14} />
-                            View More
-                            <ChevronRight size={12} className="-ml-0.5" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleView(row.user_id)}
+                              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-white font-semibold
+                                bg-white hover:bg-blue-600 border border-blue-200 hover:border-blue-600
+                                px-3.5 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                            >
+                              <Eye size={14} />
+                              View
+                              <ChevronRight size={12} className="-ml-0.5" />
+                            </button>
+                            {/* ── Delete button in table ── */}
+                            <button
+                              onClick={() => handleDeleteClick(row.loan_id, row.applicant_name, row.loan_amount, liveStatus)}
+                              className="flex items-center gap-1.5 text-sm text-red-600 hover:text-white font-semibold
+                                bg-white hover:bg-red-600 border border-red-200 hover:border-red-600
+                                px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+                              title="Delete loan"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -828,9 +1042,28 @@ export default function RecentApplications() {
                             <span className="text-sm font-bold text-slate-800">Loan #{loan.loan_id}</span>
                             <StatusBadge status={liveStatus} />
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <Clock size={12} />
-                            {loan.duration_weeks} weeks
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                              <Clock size={12} />
+                              {loan.duration_weeks} weeks
+                            </div>
+                            {/* ── Delete button in modal ── */}
+                            <button
+                              onClick={() => handleDeleteClick(
+                                loan.loan_id,
+                                selectedDetail.user.username,
+                                loan.loan_amount,
+                                liveStatus
+                              )}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                                text-red-600 hover:text-white bg-white hover:bg-red-600
+                                border border-red-200 hover:border-red-600
+                                rounded-xl transition-all duration-200 cursor-pointer"
+                              title="Delete this loan"
+                            >
+                              <Trash2 size={12} />
+                              Delete Loan
+                            </button>
                           </div>
                         </div>
                         <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-4 gap-5">

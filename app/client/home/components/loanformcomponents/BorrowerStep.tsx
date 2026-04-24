@@ -31,7 +31,7 @@ interface ValidationErrors {
 const PHONE_REGEX = /^(\+?265|0)[189]\d{8}$/;
 
 // Malawian National ID: 8 alphanumeric characters (adjust to your actual format)
-const NATIONAL_ID_REGEX = /^[A-Z0-9]{8,12}$/i;
+const NATIONAL_ID_REGEX = /^[A-Z0-9]{6,12}$/i;
 
 function validatePhone(value: string): string | undefined {
   if (!value.trim()) return 'Phone number is required';
@@ -156,7 +156,7 @@ export const BorrowerStep: React.FC<BorrowerStepProps> = ({
       <h2 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
         Personal Details
       </h2>
-
+  
       <div className="space-y-4">
         {/* ID Images Upload */}
         <div className="space-y-4 mb-6">

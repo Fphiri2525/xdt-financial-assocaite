@@ -92,6 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   ];
 
+  
   const isActiveLink = (href: string) => pathname === href;
 
   return (
